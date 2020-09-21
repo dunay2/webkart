@@ -427,7 +427,7 @@ ALTER TABLE tm_tipo_cliente
     ADD CONSTRAINT  FOREIGN KEY ( id_tipo_cliente )
         REFERENCES tm_descuento_tipo_cliente ( id_tipo_cliente );
 
-
+ALTER TABLE `tm_tipo_producto` ADD `FOTO` BLOB NOT NULL AFTER `dto`;
 
 -- Informe de Resumen de Oracle SQL Developer Data Modeler: 
 -- 
