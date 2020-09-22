@@ -5,23 +5,23 @@
 
 
 
-CREATE TABLE td_desc_producto (
+CREATE TABLE ti_desc_producto (
     id_producto         VARCHAR(20) NOT NULL,
     id_idioma           VARCHAR(2) NOT NULL,
     descripcion_corta   VARCHAR(200),
     descripcion_larga   VARCHAR(4000)
 );
 
-ALTER TABLE td_desc_producto ADD CONSTRAINT tm_desc_producto_pk PRIMARY KEY ( id_idioma,
+ALTER TABLE ti_desc_producto ADD CONSTRAINT tm_desc_producto_pk PRIMARY KEY ( id_idioma,
                                                                               id_producto );
 
-CREATE TABLE td_desc_tip_producto (
+CREATE TABLE ti_desc_tip_producto (
     id_tipo_producto   VARCHAR(20) NOT NULL,
     id_idioma          VARCHAR(2) NOT NULL,
     descripcion        VARCHAR(250) NOT NULL
 );
 
-ALTER TABLE td_desc_tip_producto ADD CONSTRAINT desc_tip_producto_pk PRIMARY KEY ( id_tipo_producto,
+ALTER TABLE ti_desc_tip_producto ADD CONSTRAINT desc_tip_producto_pk PRIMARY KEY ( id_tipo_producto,
                                                                                    id_idioma );
 
 CREATE TABLE ti_estado_pedido (
@@ -92,7 +92,7 @@ CREATE TABLE tm_cliente_registrado (
     estado_civil                VARCHAR(10),
     fecha_primera_compra        DATE,
     fecha_ultima_compra         DATE,
-    importe_acumulado_compras   numeric
+    importe_acumulado_compras   decimal(10,2)
 );
 
 ALTER TABLE tm_cliente_registrado ADD CONSTRAINT tm_cliente_registrado_pk PRIMARY KEY ( id_cliente );
@@ -177,7 +177,7 @@ CREATE TABLE tm_pedido (
     id_pedido                  VARCHAR(10) NOT NULL,
     id_cliente                 VARCHAR(10) NOT NULL,
     id_fact_env                VARCHAR(10) NOT NULL,
-    total_pedido               numeric NOT NULL,
+    total_pedido               decimal(10,2) NOT NULL,
     fecha_pedido               DATE NOT NULL,
     hora_inicio_compra         TIMESTAMP NOT NULL,
     hora_fin_compra            TIMESTAMP NULL DEFAULT NULL,,
@@ -196,9 +196,9 @@ ALTER TABLE tm_pedido ADD CONSTRAINT tm_pedido_pk PRIMARY KEY ( id_pedido );
 
 CREATE TABLE tm_producto (
     id_producto            VARCHAR(20) NOT NULL,
-    precio_actual          numeric NOT NULL,
+    precio_actual          decimal(10,2) NOT NULL,
     es_oferta              VARCHAR(1),
-    precio_oferta          numeric,
+    precio_oferta          decimal(10,2),
     reserva_inicial        DATE,
     reserva_actual         DATE,
     reserva_notificacion   DATE,
@@ -274,12 +274,12 @@ ALTER TABLE ti_modo_pago
     ADD CONSTRAINT tm_desc_pago_tm_modo_pago_fk FOREIGN KEY ( id_pago )
         REFERENCES tm_modo_pago ( id_pago );
 
-ALTER TABLE td_desc_producto
+ALTER TABLE ti_desc_producto
     ADD CONSTRAINT tm_desc_producto_tm_idioma_fk FOREIGN KEY ( id_idioma )
         REFERENCES tm_idioma ( id_idioma );
 
 
-ALTER TABLE td_desc_producto
+ALTER TABLE ti_desc_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_producto )
         REFERENCES tm_producto ( id_producto );
 
@@ -289,12 +289,12 @@ ALTER TABLE tm_desc_producto
         REFERENCES tm_tipo_producto ( id_tipo_producto );
 
 
-ALTER TABLE td_desc_tip_producto
+ALTER TABLE ti_desc_tip_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_idioma )
         REFERENCES tm_idioma ( id_idioma );
 
 
-ALTER TABLE td_desc_tip_producto
+ALTER TABLE ti_desc_tip_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_tipo_producto )
         REFERENCES tm_tipo_producto ( id_tipo_producto );
 
@@ -374,12 +374,12 @@ ALTER TABLE ti_modo_pago
     ADD CONSTRAINT  FOREIGN KEY ( id_pago )
         REFERENCES tm_modo_pago ( id_pago );
 
-ALTER TABLE td_desc_producto
+ALTER TABLE ti_desc_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_idioma )
         REFERENCES tm_idioma ( id_idioma );
 
 
-ALTER TABLE td_desc_producto
+ALTER TABLE ti_desc_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_producto )
         REFERENCES tm_producto ( id_producto );
 
@@ -389,12 +389,12 @@ ALTER TABLE tm_desc_producto
         REFERENCES tm_tipo_producto ( id_tipo_producto );
 
 
-ALTER TABLE td_desc_tip_producto
+ALTER TABLE ti_desc_tip_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_idioma )
         REFERENCES tm_idioma ( id_idioma );
 
 
-ALTER TABLE td_desc_tip_producto
+ALTER TABLE ti_desc_tip_producto
     ADD CONSTRAINT  FOREIGN KEY ( id_tipo_producto )
         REFERENCES tm_tipo_producto ( id_tipo_producto );
 
@@ -427,7 +427,7 @@ ALTER TABLE tm_tipo_cliente
     ADD CONSTRAINT  FOREIGN KEY ( id_tipo_cliente )
         REFERENCES tm_descuento_tipo_cliente ( id_tipo_cliente );
 
-ALTER TABLE `tm_tipo_producto` ADD `FOTO` BLOB NOT NULL AFTER `dto`;
+ALTER TABLE `tm_tipo_producto` CHANGE `FOTO` `FOTO` LONGBLOB NOT NULL;
 
 -- Informe de Resumen de Oracle SQL Developer Data Modeler: 
 -- 
