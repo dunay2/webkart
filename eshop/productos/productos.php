@@ -1,4 +1,3 @@
-
 <div class="container">
 
 <br>  
@@ -25,10 +24,9 @@
 <div class="row">
 
 <?php
-$i=0;
+
 while ($fila=mysqli_fetch_array($query)) 
 { 
-    
         ?>
 <div class="col-md-4">
 	<figure class="card card-product">

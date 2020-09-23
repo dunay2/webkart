@@ -36,11 +36,11 @@ if(isset($_GET['accion']) && $_GET['accion']=="anyadir"){
   <div class="jumbotron bg-white">
   <span class="text-success">
       <h1 class=" bg-white text-dark">Bienvenido a Vida Natural </h1> 
+      <h4 class=" bg-white text-dark">La tienda donde econtrará aquello que busca</h4>
     </span>
-    <p>La tienda donde econtrará aquello que busca</p>
+    
   </div>  
 </div>
-
 
 <div class="table-responsive">
 
@@ -62,24 +62,20 @@ if(isset($_GET['accion']) && $_GET['accion']=="anyadir"){
             <p>
             <?php   echo $fila['comentario'] ?>
   </p> 
-  <footer class="blockquote-footer"><?php  echo $fila['footer'] ?></footer> 
+  <footer class="blockquote-footer bg-white"><?php  echo $fila['footer'] ?>dddd</footer> 
 </blockquote>
             </td> 
             <td> <?php  echo '<a href="?menu=categoria&categoria='. $fila['id_tipo_producto'].' " title=""> 
               <img class="img-responsive" width="40%" height="40%" src="data:image/jpeg;base64,'.base64_encode( $fila['imagen'] ).'"/>';
                  ?>
             </a></br>
-        </td>             
-            
-            
+        </td>                   
 
         </tr> 
     <?php  } ?> 
 </table>
 </div>
 <br>
-
-
 
 </body> 
 </html>

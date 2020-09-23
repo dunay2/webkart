@@ -18,6 +18,15 @@
 				break;
 			case 'allproducts':
 				$page='productos/productos.php';
+				break;
+			case 'carrito':
+				$myaction=$_GET['action'];
+				$productID=$_GET['id'];				
+				$page='carrito/cartAction.php';
+				break;
+			case 'viewcart':				
+				$page='carrito/viewcart.php';
+				break;
 		}
 
 		require_once($page);

@@ -9,5 +9,8 @@
     $conexion = mysqli_connect($server, $user, $pass) or die("Error al conectar al servidor."); 
     $conexion->query("SET NAMES 'UTF8'");
         
+    //Create connection and select DB
+   // $db = new mysqli($dbHost, $dbUsername, $dbPassword, $dbName);
+
     mysqli_select_db($conexion, $db) or die("Error al conectar al servidor de base de datos."); 
 ?>
