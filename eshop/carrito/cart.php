@@ -3,6 +3,7 @@ class Cart {
     protected $cart_contents = array();
     
     public function __construct(){
+        
         // get the shopping cart array from the session
         $this->cart_contents = !empty($_SESSION['cart_contents'])?$_SESSION['cart_contents']:NULL;
         if ($this->cart_contents === NULL){

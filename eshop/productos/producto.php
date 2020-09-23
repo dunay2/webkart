@@ -36,7 +36,7 @@
                 <div class="card-body">
                     <p class="price"><?php echo $fila['precio_oferta']?>€</p>
                     <p class="price_discounted"><?php echo $fila['precio_actual'] ?>€</p>
-                    <form method="get" action="?menu=carrito&action=addToCart">
+                    <form id="dataform" name="dataform"  method="get" action="?menu=carrito&action=addToCart">
                         
                         <div class="form-group">
                             <label>Cantidad :</label>
@@ -46,6 +46,10 @@
                                         <i class="fa fa-minus"></i>
                                     </button>
                                 </div>
+                                <input type=hidden name="menu" d="menu" value="carrito">
+                                <input type=hidden name="action" id="action" value="addToCart">
+                                <input type=hidden name="id" id="id" value="<?php echo $fila['id_producto'] ?>">
+
                                 <input type="text" class="form-control"  id="quantity" name="quantity" min="1" max="100" value="1">
                                 <div class="input-group-append">
                                     <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus" data-field="">
@@ -54,7 +58,7 @@
                                 </div>
                             </div>
                         </div>
-                        <a href="?menu=carrito&action=addToCart&id=<?php echo $fila['id_producto'] ?>" class="btn btn-success btn-lg btn-block text-uppercase">
+                        <a name="alink"  id="alink"  onclick="sendForm()" href="#" class="btn btn-success btn-lg btn-block text-uppercase">                        
                             <i class="fa fa-shopping-cart"></i> Añadir al carro
                         </a>
                     </form>
@@ -180,4 +184,9 @@
         });
 
     });
+
+    function sendForm(){
+        document.getElementById("dataform").submit();
+    }
+
 	</script>

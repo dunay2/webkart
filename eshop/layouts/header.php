@@ -68,17 +68,12 @@ footer a {
 ob_start( );
 	
 if (!empty($_GET)) {
-    if ($_GET['menu']=='carrito')
+    if ($_GET['menu']=='carrito' || $_GET['menu']=='viewcart' )
     {
-        session_start();
-        echo 'sesion iniciada';
+        session_start();        
     }      
-    
 }
 
-echo 'soy lo primero que me cargo en la pagina ';
-
-//require("carrito/cartAction.php");    
 
 ?>
 <nav class="navbar navbar-expand-md navbar-dark bg-dark">

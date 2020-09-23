@@ -17,7 +17,6 @@ if(isset($myaction) && !empty($myaction)){
     if($myaction == 'addToCart' && !empty($productID)){        
         // get product details
         
-
         $query = $conexion->query("CALL getProduct('ES','$productID')");                
 
         $row = $query->fetch_assoc();
@@ -25,12 +24,10 @@ if(isset($myaction) && !empty($myaction)){
             'id' => $row['id_producto'],
             'name' => $row['descripcion_corta'],
             'price' => $row['precio_oferta'],
-            'qty' => 1
+            'qty' => $quantity
         );
 
         $insertItem = $cart->insert($itemData);
-
-        echo 'en el carro hay '. $cart->total_items() . ' cosas';
 
         $redirectLoc = $insertItem?'viewCart.php':'index.php';
 

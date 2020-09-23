@@ -21,12 +21,25 @@
 				break;
 			case 'carrito':
 				$myaction=$_GET['action'];
-				$productID=$_GET['id'];				
+				$productID=$_GET['id'];		
+				if (isset($_GET['quantity'])) 
+				$quantity=$_GET['quantity'];	
+				
 				$page='carrito/cartAction.php';
 				break;
 			case 'viewcart':				
 				$page='carrito/viewcart.php';
 				break;
+/*
+			case 'deletecartitem':			
+				$myaction=$_GET['action'];
+				$productID=$_GET['id'];		
+				$quantity=$_GET['quantity'];					
+				$page='carrito/cartAction.php';	
+
+			break;
+			*/
+
 		}
 
 		require_once($page);
