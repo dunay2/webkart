@@ -25,9 +25,9 @@ $cart = new Cart;
     <table class="table">
     <thead>
         <tr>
-            <th>Product</th>
-            <th>Price</th>
-            <th>Quantity</th>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
             <th>Subtotal</th>
             <th> </th>
         </tr>
@@ -58,11 +58,11 @@ $cart = new Cart;
     </tbody>
     <tfoot>
         <tr>
-            <td><a href="index.php" class="btn btn-warning"><i class="glyphicon glyphicon-menu-left"></i> Continue Shopping</a></td>
+            <td><a href="index.php" class="btn btn-warning"><i class="glyphicon glyphicon-menu-left"></i> Continuar comprando</a></td>
             <td colspan="2"></td>
             <?php if($cart->total_items() > 0){ ?>
             <td class="text-center"><strong>Total <?php echo $cart->total().' €'; ?></strong></td>
-            <td><a href="checkout.php" class="btn btn-success btn-block">Checkout <i class="glyphicon glyphicon-menu-right"></i></a></td>
+            <td><a href="?menu=checkout" class="btn btn-success btn-block">Finalizar y pagar <i class="glyphicon glyphicon-menu-right"></i></a></td>
             <?php } ?>
         </tr>
     </tfoot>

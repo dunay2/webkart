@@ -12,7 +12,7 @@ require("includes/conexion.php");
 
 if(isset($myaction) && !empty($myaction)){
 
-    echo 'cartAction tiene una accion';
+    echo 'cartAction tiene una accion '. $myaction .'<br>';
 
     if($myaction == 'addToCart' && !empty($productID)){        
         // get product details
@@ -37,6 +37,14 @@ if(isset($myaction) && !empty($myaction)){
         exit;
        
 
+    }elseif($myaction == 'removeCartItem' && !empty($productID)){
+
+        
+        $deleteItem = $cart->remove($productID);
+        $redirectLoc='?menu=viewcart';
+        header("Location: ".$redirectLoc);
+
+
     }elseif($myaction == 'updateCartItem' && !empty($id_producto)){
         $itemData = array(
             'rowid' => $id_producto,
@@ -44,10 +52,13 @@ if(isset($myaction) && !empty($myaction)){
         );
         $updateItem = $cart->update($itemData);
         echo $updateItem?'ok':'err';die;
-    }elseif($myaction == 'removeCartItem' && !empty($id_producto)){
-        $deleteItem = $cart->remove($id_producto);
-        header("Location: viewCart.php");
+
+
+        
     }elseif($myaction == 'placeOrder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID'])){
+
+        echo '<br>vamos a insertar';
+
         // insert order details into database
         $insertOrder = $db->query("INSERT INTO orders (customer_id, total_price, created, modified) VALUES ('".$_SESSION['sessCustomerID']."', '".$cart->total()."', '".date("Y-m-d H:i:s")."', '".date("Y-m-d H:i:s")."')");
         

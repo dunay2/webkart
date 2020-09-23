@@ -428,6 +428,7 @@ ALTER TABLE tm_tipo_cliente
         REFERENCES tm_descuento_tipo_cliente ( id_tipo_cliente );
 
 ALTER TABLE `tm_tipo_producto` CHANGE `imagen` `imagen` BLOB ;
+ALTER TABLE `tm_cliente_registrado` ADD `telefono` VARCHAR(20) NOT NULL AFTER `email`;
 
 -- Informe de Resumen de Oracle SQL Developer Data Modeler: 
 -- 
