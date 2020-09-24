@@ -52,7 +52,8 @@ if (isset($myaction) && !empty($myaction))
     }
     elseif ($myaction == 'placeOrder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
     {
-        
+        echo "estamo dentros";
+
         // insert order details into database
         //$_SESSION['sessCustomerID'] =2;
         $customer = $_SESSION['sessCustomerID'];
@@ -60,15 +61,24 @@ if (isset($myaction) && !empty($myaction))
         // get customer details by session customer ID
         $total = $cart->total();
         $sql = "CALL placeOrder('$customer', $total ,'$client_ip','" . TARJETA . "','" . MODO_ENVIO_WEB . "')";
-        echo 'llamda';
-        if (!$query = $conexion->query($sql))
-        {
-            echo '<br>'.$sql.'</br>';
-            echo "Falló la instrucción select error es : (" . $conexion->errno . ") " . $conexion->error;
-            exit;
-        }
-        $fila = mysqli_fetch_array($query);
+        
+        
+       // try
+       // if (!$query = $conexion->query($sql))
+        //{
+         //   echo '<br>'.$sql.'</br>';
+          //  echo "Falló la instrucción select error es : (" . $conexion->errno . ") " . $conexion->error;
+           // mysql_free_result($query);
+           // mysql_close($conexion);
+           // unset($query,$conexion);
+            //exit;
+        //}
 
+        $query = $conexion->query($sql);        
+        
+        $fila = mysqli_fetch_array($query);
+        
+        
         $orderID = $fila['id'];
 
         if ($orderID)
@@ -77,17 +87,16 @@ if (isset($myaction) && !empty($myaction))
             $cartItems = $cart->contents();
             $cont = 0;
             $sql = "";
+            
             foreach ($cartItems as $item)
             {
-                $sql .= "CALL placeOrderDetail(" . ++$cont . "," . $orderID . ",'" . $item['id'] . "'," . $item['qty'] . "," . $item['price'] . ");";
+                $sql = "CALL placeOrderDetail(" . ++$cont . "," . $orderID . ",'" . $item['id'] . "'," . $item['qty'] . "," . $item['price'] . ");";
+                $query = $conexion->query($sql);        
             }
 
             $conexion->next_result();
 
-            if ($insertOrderItems = $conexion->multi_query($sql))
-            {
-
-                $sql = "CALL changeOrderStatus(" . $orderID . ",'" . $estado . "')";
+            $sql = "CALL changeOrderStatus(" . $orderID . ",'" . $estado . "')";
 
                 if (!$query = $conexion->query($sql))
                 {                    
@@ -96,18 +105,11 @@ if (isset($myaction) && !empty($myaction))
                 }
 
                 $cart->destroy();
-                $redirectLoc = '?menu=orderSuccess&id=' . $orderID;
-                header("Location: " . $redirectLoc);
-            }
-            else
-            {
-                
-                echo "Falló la instrucción select: (" . $conexion->errno . ") " . $conexion->error;
-                
-                $redirectLoc = '?menu=checkout';
-                header("Location: " . $redirectLoc);
 
-            }
+                $redirectLoc = '?menu=orderSuccess&id=' . $orderID;
+
+                header("Location: " . $redirectLoc);                    
+                
         }
         else
         {            

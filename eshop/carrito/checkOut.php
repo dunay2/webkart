@@ -68,7 +68,8 @@
             
                <div class="footBtn">
                   <a href="index.php" class="btn btn-warning"><i class="glyphicon glyphicon-menu-left"></i> Continuar comprando</a>
-                  <a href="?menu=carrito&action=placeOrder" class="btn btn-success orderBtn">Introducir datos de envío <i class="glyphicon glyphicon-menu-right"></i></a>
+                  <!--<a href="?menu=carrito&action=placeOrder" class="btn btn-success orderBtn">Introducir datos de envío <i class="glyphicon glyphicon-menu-right"></i></a>-->
+                  <a href="?menu=datosenvio" class="btn btn-success orderBtn">Introducir datos de envío <i class="glyphicon glyphicon-menu-right"></i></a>
                </div>
             </td>
             <td class="text-center">
