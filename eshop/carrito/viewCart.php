@@ -5,23 +5,21 @@ include 'Cart.php';
 $cart = new Cart;
 ?>
 
-    
     <script>
     function updateCartItem(obj,id){
         $.get("cartAction.php", {action:"updateCartItem", id:id, qty:obj.value}, function(data){
             if(data == 'ok'){
                 location.reload();
             }else{
-                alert('Cart update failed, please try again.');
+                alert('Error al actualizar el carrito, por favor, vuelva a intentarlo.');
             }
         });
     }
     </script>
 
 
-
 <div class="container">
-    <h1>Shopping Cart</h1>
+    <h1>Carrito de la compra</h1>
     <table class="table">
     <thead>
         <tr>
@@ -53,7 +51,7 @@ $cart = new Cart;
             </td>
         </tr>
         <?php } }else{ ?>
-        <tr><td colspan="5"><p>Your cart is empty.....</p></td>
+        <tr><td colspan="5"><p>Su carrito está vacío ...</p></td>
         <?php } ?>
     </tbody>
     <tfoot>

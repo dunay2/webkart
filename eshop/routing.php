@@ -28,10 +28,18 @@
 				$page='carrito/cartAction.php';
 				break;
 			case 'viewcart':				
-				$page='carrito/viewcart.php';
+				$page='carrito/viewcart.php';				
 				break;
+			case 'datosenvio':				
+					$page='clientes/datosenvio.php';				
+					break;
 			case 'checkout':				
 				$page='carrito/checkOut.php';
+				break;
+			case 'orderSuccess':					
+				if (isset($_GET['id'])) 
+				$id=$_GET['id'];
+				$page='carrito/orderSuccess.php';
 				break;
 	
 		}

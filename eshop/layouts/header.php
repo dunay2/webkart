@@ -57,7 +57,6 @@ footer {
     padding: 40px;
 }
 
-
 footer a {
     color: #f8f9fa!important
 }
@@ -68,7 +67,7 @@ footer a {
 ob_start( );
 	
 if (!empty($_GET)) {
-    if ($_GET['menu']=='carrito' || $_GET['menu']=='viewcart' )
+    if ($_GET['menu']=='carrito' || $_GET['menu']=='viewcart' || $_GET['menu']=='checkout' )
     {
         session_start();        
     }      
@@ -90,14 +89,14 @@ if (!empty($_GET)) {
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link" href="?menu=allproducts">Product</a>
+                    <a class="nav-link" href="?menu=allproducts">Productos</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="?menu=registroclientes">Register</a>
+                    <a class="nav-link" href="?menu=registroclientes">Registro</a>
 				</li>
 				<li class="nav-item">
-                    <a class="nav-link" href="contact.html">Contact</a>
+                    <a class="nav-link" href="contact.html">Contacto</a>
                 </li>
             </ul>
 
@@ -111,8 +110,8 @@ if (!empty($_GET)) {
                     </div>
                 </div>
                 <a class="btn btn-success btn-sm ml-3" href="?menu=viewcart">
-                    <i class="fa fa-shopping-cart"></i> Cart
-                    <span class="badge badge-light">3</span>
+                    <i class="fa fa-shopping-cart"></i> Carrito
+                    <span class="badge badge-light"><?php $total_items; ?></span>
 				</a>			
 			</form>			
 		</div>		

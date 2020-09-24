@@ -6,7 +6,8 @@
     $db="webkart"; 
       
     // connect to mysql       
-    $conexion = mysqli_connect($server, $user, $pass) or die("Error al conectar al servidor."); 
+    //$conexion = mysqli_connect($server, $user, $pass) or die("Error al conectar al servidor."); 
+    $conexion = new mysqli($server, $user, $pass, $db) or die("Error al conectar al servidor.");
     $conexion->query("SET NAMES 'UTF8'");
         
     //Create connection and select DB

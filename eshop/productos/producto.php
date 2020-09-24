@@ -5,7 +5,6 @@
                 
         $query=mysqli_query($conexion, $sql); 
         $fila=mysqli_fetch_array($query);
-
       
      ?> 
 
