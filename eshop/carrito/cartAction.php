@@ -11,6 +11,7 @@ include 'Cart.php';
 $cart = new Cart;
 // include database configuration file
 require ("includes/conexion.php");
+//require_once
 if (isset($myaction) && !empty($myaction))
 {
 
@@ -51,84 +52,21 @@ if (isset($myaction) && !empty($myaction))
         die;
     }
     elseif ($myaction == 'placeOrder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
-    {
-        echo "estamo dentros";
-
-        // insert order details into database
-        //$_SESSION['sessCustomerID'] =2;
-        $customer = $_SESSION['sessCustomerID'];
-        $client_ip = $_SERVER['REMOTE_ADDR'];
-        // get customer details by session customer ID
-        $total = $cart->total();
-        $sql = "CALL placeOrder('$customer', $total ,'$client_ip','" . TARJETA . "','" . MODO_ENVIO_WEB . "')";
-        
-        
-       // try
-       // if (!$query = $conexion->query($sql))
-        //{
-         //   echo '<br>'.$sql.'</br>';
-          //  echo "Falló la instrucción select error es : (" . $conexion->errno . ") " . $conexion->error;
-           // mysql_free_result($query);
-           // mysql_close($conexion);
-           // unset($query,$conexion);
-            //exit;
-        //}
-
-        $query = $conexion->query($sql);        
-        
-        $fila = mysqli_fetch_array($query);
-        
-        
-        $orderID = $fila['id'];
-
-        if ($orderID)
-        {
-            // get cart items
-            $cartItems = $cart->contents();
-            $cont = 0;
-            $sql = "";
-            
-            foreach ($cartItems as $item)
-            {
-                $sql = "CALL placeOrderDetail(" . ++$cont . "," . $orderID . ",'" . $item['id'] . "'," . $item['qty'] . "," . $item['price'] . ");";
-                $query = $conexion->query($sql);        
-            }
-
-            $conexion->next_result();
-
-            $sql = "CALL changeOrderStatus(" . $orderID . ",'" . $estado . "')";
-
-                if (!$query = $conexion->query($sql))
-                {                    
-                    echo "Falló la instrucción select: (" . $conexion->errno . ") " . $conexion->error;
-                    exit;
-                }
-
-                $cart->destroy();
-
-                $redirectLoc = '?menu=orderSuccess&id=' . $orderID;
-
-                header("Location: " . $redirectLoc);                    
-                
-        }
-        else
-        {            
-                $redirectLoc = '?menu=checkout';
-                header("Location: " . $redirectLoc);      
-        }
+    {     
+     include_once('placeorder.php');     
     }
     else
     {
-                
+
         $redirectLoc = '?menu=index';
-                header("Location: " . $redirectLoc);
-        
+        header("Location: " . $redirectLoc);
+
     }
 }
 else
-{    
+{
     $redirectLoc = '?menu=index';
     header("Location: " . $redirectLoc);
-    
-    
+
 }
+
