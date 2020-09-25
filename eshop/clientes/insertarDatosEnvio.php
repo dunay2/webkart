@@ -17,10 +17,6 @@
     
     $fila = mysqli_fetch_array($query);
 
-    $invoiceID = $fila['id'];
-
-    //$fila = mysqli_fetch_array($query);
-
+    $invoiceID = $fila['id'];    
     
-
 ?>

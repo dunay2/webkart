@@ -8,12 +8,17 @@ require_once('clientes/insertarDatosEnvio.php');
         $client_ip = $_SERVER['REMOTE_ADDR'];
         // get customer details by session customer ID
         $total = $cart->total();
-        $sql = "CALL placeOrder('$customer', $total ,'$client_ip','" . TARJETA . "','" . MODO_ENVIO_WEB . "')";
 
-        $query = $conexion->query($sql);
-
+        $sql = "CALL placeOrder('$customer', $total ,'$client_ip','" . TARJETA . "','" . MODO_ENVIO_WEB . "',$invoiceID)";
+                
+        $conexion->next_result();
+        if (!$query = $conexion->query($sql))
+        {
+            echo "Falló la instrucción select: (" . $conexion->errno . ") " . $conexion->error;
+            exit;
+        }
         $fila = mysqli_fetch_array($query);
-
+        
         $orderID = $fila['id'];
 
         if ($orderID)
