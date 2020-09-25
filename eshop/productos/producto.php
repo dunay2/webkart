@@ -2,7 +2,7 @@
         require("includes/conexion.php");        
                 
         $sql="CALL getProduct('ES','$myproduct')";            
-                
+                        
         $query=mysqli_query($conexion, $sql); 
         $fila=mysqli_fetch_array($query);
       
@@ -10,7 +10,9 @@
 
 <section class="jumbotron text-center">
     <div class="container">
+        
         <h1 class="jumbotron-heading"><?php echo $fila['descripcion_corta']?></h1>
+        
         <p class="lead text-muted mb-0"></p>
     </div>
 </section>

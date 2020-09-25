@@ -56,7 +56,7 @@ $cart = new Cart;
     </tbody>
     <tfoot>
         <tr>
-            <td><a href="index.php" class="btn btn-warning"><i class="glyphicon glyphicon-menu-left"></i> Continuar comprando</a></td>
+            <td ><a href="index.php" class="btn btn-warning btn-block">Continuar comprando<i class="glyphicon glyphicon-menu-right"></i></a></td>
             <td colspan="2"></td>
             <?php if($cart->total_items() > 0){ ?>
             <td class="text-center"><strong>Total <?php echo $cart->total().' €'; ?></strong></td>
