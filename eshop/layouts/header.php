@@ -63,18 +63,10 @@ footer a {
     </style>
 
 <?php 
-
+//para poder realizar los reenvios
 ob_start( );
-	
-if (!empty($_GET)) {
-    if ($_GET['menu']=='carrito' || $_GET['menu']=='viewcart' || $_GET['menu']=='checkout' )
-    {
-        session_start();        
-    }      
-}
-
-
 ?>
+
 <nav class="navbar navbar-expand-md navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="index.php">Vida natural</a>
@@ -118,7 +110,25 @@ if (!empty($_GET)) {
 	</div>
 	
 	<li class="nav-item active">
-		<a  href="#"><span class="navbar-brand mb-0 h1"> Log in</span>	  </a>
+
+
+        <a  href="?menu=login"><span class="navbar-brand mb-0 h1"> Log in</span>	  </a>
+        
+<?php    
+
+echo "estado es " . session_status();
+if (session_status() == PHP_SESSION_ACTIVE) {
+    echo 'Session is active';
+  }
+
+if (isset($_SESSION['user_id']))
+{
+    echo "<br>valor de sesion " . $_SESSION['user_id'];
+    echo "<br>";
+}
+    
+?>   
+
 	</li>
 
 </nav>

@@ -1,7 +1,8 @@
 <?php
+session_start();  
 // include database configuration file
-//require_once
-require ("includes/conexion.php");
+
+require_once ("includes/conexion.php");
 
 // initializ shopping cart class
 include 'Cart.php';

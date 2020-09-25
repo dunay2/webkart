@@ -1,6 +1,6 @@
 <?php
 
-require_once('clientes/insertardatosenvio.php');
+require_once('clients/insertardatosenvio.php');
 
 // insert order details into database
         //$_SESSION['sessCustomerID'] =2;
@@ -17,9 +17,9 @@ require_once('clientes/insertardatosenvio.php');
             echo "Falló la instrucción select: (" . $conexion->errno . ") " . $conexion->error;
             exit;
         }
-        $fila = mysqli_fetch_array($query);
+        $row = mysqli_fetch_array($query);
         
-        $orderID = $fila['id'];
+        $orderID = $row['id'];
 
         if ($orderID)
         {

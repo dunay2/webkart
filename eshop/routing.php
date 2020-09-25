@@ -8,7 +8,7 @@
 		
 		switch ($menu) {
 			case 'registroclientes':
-				$page='clientes/register.php';
+				$page='clients/register.php';			
 				break;
 			case 'categoria':
 				$page='products/products.php';						
@@ -33,7 +33,7 @@
 				$page='carrito/viewcart.php';				
 				break;
 			case 'datosenvio':				
-				$page='clientes/datosenvio.php';				
+				$page='clients/datosenvio.php';				
 				break;
 			case 'checkout':				
 				$page='carrito/checkout.php';
@@ -43,6 +43,25 @@
 				$id=$_GET['id'];
 				$page='carrito/ordersuccess.php';
 				break;
+
+			//admin menu
+			case 'showorders':					
+				$page='admin/showorders.php';
+				break;
+			case 'showorderdetail':					
+					$id=$_GET['id'];
+					$page='admin/showorderdetail.php';
+					break;
+			case 'login':								
+					$page='admin/login.php';
+			break;
+			case 'adminregister':								
+				$page='admin/register.php';
+			break;
+			case 'adminmenu':								
+				$page='admin/adminmenu.php';
+			break;
+
 		}				
 	}
 

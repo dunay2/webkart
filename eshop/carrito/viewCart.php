@@ -1,14 +1,17 @@
 <?php
 // initializ shopping cart class
+session_start();    
 include 'Cart.php';
 
 $cart = new Cart;
 ?>
 
     <script>
-    function updateCartItem(obj,id){
-        $.get("cartAction.php", {action:"updateCartItem", id:id, qty:obj.value}, function(data){
-            if(data == 'ok'){
+    function updateCartItem(obj,id){           
+
+        $.get("carrito/cartAction.php", {myaction:"updateCartItem", id:id, qty:obj.value}, function(data,status){                        
+                        
+            if(data ){            
                 location.reload();
             }else{
                 alert('Error al actualizar el carrito, por favor, vuelva a intentarlo.');
@@ -31,13 +34,13 @@ $cart = new Cart;
         </tr>
     </thead>
     <tbody>
-        <?php
+<?php
         
         if($cart->total_items() > 0){
             //get cart items from session
             $cartItems = $cart->contents();
             foreach($cartItems as $item){
-        ?>
+?>
         <tr>
             <td><?php echo $item["name"]; ?></td>
             <td><?php echo $item["price"].' €'; ?></td>
@@ -50,9 +53,9 @@ $cart = new Cart;
             </a>
             </td>
         </tr>
-        <?php } }else{ ?>
+<?php } }else{ ?>
         <tr><td colspan="5"><p>Su carrito está vacío ...</p></td>
-        <?php } ?>
+<?php } ?>
     </tbody>
     <tfoot>
         <tr>
@@ -61,7 +64,7 @@ $cart = new Cart;
             <?php if($cart->total_items() > 0){ ?>
             <td class="text-center"><strong>Total <?php echo $cart->total().' €'; ?></strong></td>
             <td><a href="?menu=checkout" class="btn btn-success btn-block">Finalizar y pagar <i class="glyphicon glyphicon-menu-right"></i></a></td>
-            <?php } ?>
+<?php } ?>
         </tr>
     </tfoot>
     </table>

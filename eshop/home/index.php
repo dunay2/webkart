@@ -6,32 +6,22 @@ if(isset($_GET['accion']) && $_GET['accion']=="anyadir"){
    if(isset($_SESSION['carrito'][$id])){ 
       $_SESSION['carrito'][$id]['cantidad']++; 
    }else{ 
-      //$sql_s="SELECT * FROM ti_desc_tip_producto where  =$id"; 
-      $sql_s="SELECT * FROM ti_desc_tip_producto where id_idioma ='ES'"; 
-      $query_s=mysqli_query($conexion, $sql_s); 
-      if(mysqli_num_rows($query_s)!=0){ 
-         $fila_s=mysqli_fetch_array($query_s);
+      //$sql="SELECT * FROM ti_desc_tip_producto where  =$id"; 
+      $sql="SELECT * FROM ti_desc_tip_producto where id_idioma ='ES'"; 
+      $query=mysqli_query($conexion, $sql); 
+      if(mysqli_num_rows($query)!=0){ 
+         $row=mysqli_fetch_array($query);
 
-         $_SESSION['carrito'][$fila_s['codigoComida']]=array( 
+         $_SESSION['carrito'][$row['codigoComida']]=array( 
          "cantidad" => 1, 
-         "precio" => $fila_s['precioComida']);
+         "precio" => $row['precioComida']);
       }
   }
 } 
  
 ?>
-<!DOCTYPE html> 
-<html lang="es">
-<meta charset="UTF-8">  
  
-<head> 
-    <link rel="stylesheet" href="css/estilos.css" />  
-    <title>Bienvenido a Vida Natural</title> 
-</head> 
-
-<body> 
     
-
 <div class="container">
   <div class="jumbotron bg-white">
   <span class="text-success">
@@ -53,20 +43,20 @@ if(isset($_GET['accion']) && $_GET['accion']=="anyadir"){
 
         $query=mysqli_query($conexion, $sql); 
 
-        while ($fila=mysqli_fetch_array($query)) { 
+        while ($row=mysqli_fetch_array($query)) { 
     ?> 
         <tr>             
             <td>            
-            <?php echo $fila['descripcion'] ?>
+            <?php echo $row['descripcion'] ?>
             <blockquote class="blockquote">
             <p>
-            <?php   echo $fila['comentario'] ?>
+            <?php   echo $row['comentario'] ?>
   </p> 
-  <footer class="blockquote-footer bg-white"><?php  echo $fila['footer'] ?>dddd</footer> 
+  <footer class="blockquote-footer bg-white"><?php  echo $row['footer'] ?></footer> 
 </blockquote>
             </td> 
-            <td> <?php  echo '<a href="?menu=categoria&categoria='. $fila['id_tipo_producto'].' " title=""> 
-              <img class="img-responsive" width="40%" height="40%" src="data:image/jpeg;base64,'.base64_encode( $fila['imagen'] ).'"/>';
+            <td> <?php  echo '<a href="?menu=categoria&categoria='. $row['id_tipo_producto'].' " title=""> 
+              <img class="img-responsive" width="40%" height="40%" src="data:image/jpeg;base64,'.base64_encode( $row['imagen'] ).'"/>';
                  ?>
             </a></br>
         </td>                   
@@ -77,5 +67,3 @@ if(isset($_GET['accion']) && $_GET['accion']=="anyadir"){
 </div>
 <br>
 
-</body> 
-</html>

@@ -4,14 +4,14 @@
         $sql="CALL getProduct('ES','$myproduct')";            
                         
         $query=mysqli_query($conexion, $sql); 
-        $fila=mysqli_fetch_array($query);
+        $row=mysqli_fetch_array($query);
       
      ?> 
 
 <section class="jumbotron text-center">
     <div class="container">
         
-        <h1 class="jumbotron-heading"><?php echo $fila['descripcion_corta']?></h1>
+        <h1 class="jumbotron-heading"><?php echo $row['descripcion_corta']?></h1>
         
         <p class="lead text-muted mb-0"></p>
     </div>
@@ -35,8 +35,8 @@
         <div class="col-12 col-lg-6 add_to_cart_block">
             <div class="card bg-light mb-3">
                 <div class="card-body">
-                    <p class="price"><?php echo $fila['precio_oferta']?>€</p>
-                    <p class="price_discounted"><?php echo $fila['precio_actual'] ?>€</p>
+                    <p class="price"><?php echo $row['precio_oferta']?>€</p>
+                    <p class="price_discounted"><?php echo $row['precio_actual'] ?>€</p>
                     <form id="dataform" name="dataform"  method="get" action="?menu=carrito&action=addToCart">
                         
                         <div class="form-group">
@@ -49,7 +49,7 @@
                                 </div>
                                 <input type=hidden name="menu" d="menu" value="carrito">
                                 <input type=hidden name="action" id="action" value="addToCart">
-                                <input type=hidden name="id" id="id" value="<?php echo $fila['id_producto'] ?>">
+                                <input type=hidden name="id" id="id" value="<?php echo $row['id_producto'] ?>">
 
                                 <input type="text" class="form-control"  id="quantity" name="quantity" min="1" max="100" value="1">
                                 <div class="input-group-append">
@@ -96,7 +96,7 @@
                 <div class="card-header bg-primary text-white text-uppercase"><i class="fa fa-align-justify"></i> Description</div>
                 <div class="card-body">
                     <p class="card-text">
-                    <?php echo $fila['descripcion_larga']?>
+                    <?php echo $row['descripcion_larga']?>
                     </p>                    
                 </div>
             </div>

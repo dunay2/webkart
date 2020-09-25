@@ -9,9 +9,9 @@
 
     $query = $conexion->query($sql);
 
-    while ($fila = mysqli_fetch_assoc($query))
+    while ($row = mysqli_fetch_assoc($query))
     {?>
-    <option  value="<?php echo $fila["iso"] ?>" data-subtext="<?php echo $fila["iso"]; ?>"><?php echo $fila["nombre"]; ?></option>
+    <option  value="<?php echo $row["iso"] ?>" data-subtext="<?php echo $row["iso"]; ?>"><?php echo $row["nombre"]; ?></option>
 <?php
 } ?>          
     </select>

@@ -16,7 +16,7 @@
             $sql="call getProductByCategory ('$mycategory','ES')";        
         }
 
-        $query=mysqli_query($conexion, $sql); 
+        $query = $conexion->query($sql);
      ?> 
 
     </p>
@@ -25,7 +25,7 @@
 
 <?php
 
-while ($fila=mysqli_fetch_array($query)) 
+while ($row=mysqli_fetch_array($query)) 
 { 
         ?>
 <div class="col-md-4">
@@ -33,17 +33,17 @@ while ($fila=mysqli_fetch_array($query))
         <div class="img-wrap">         
         </div>
 		<figcaption class="info-wrap">
-				<h4 class="title"><?php echo $fila['descripcion_corta'] ?></h4>
-				<p class="desc"><?php  echo $fila['descripcion_larga'] ?>...</p>
+				<h4 class="title"><?php echo $row['descripcion_corta'] ?></h4>
+				<p class="desc"><?php  echo $row['descripcion_larga'] ?>...</p>
 				<div class="rating-wrap">
 					<div class="label-rating">132 opiniones</div>
 					<div class="label-rating">154 pedidos</div>
 				</div> <!-- rating-wrap.// -->
 		</figcaption>
 		<div class="bottom-wrap">
-			<a href="?menu=producto&producto=<?php echo $fila['id_producto'] ?>" class="btn btn-sm btn-primary float-right">ver este producto</a>	
+			<a href="?menu=producto&producto=<?php echo $row['id_producto'] ?>" class="btn btn-sm btn-primary float-right">ver este producto</a>	
 			<div class="price-wrap h5">
-				<span class="price-new"><?php echo $fila['precio_oferta'] ?>€ </span> <del class="price-old"><?php echo $fila['precio_actual'] ?>€</del>
+				<span class="price-new"><?php echo $row['precio_oferta'] ?>€ </span> <del class="price-old"><?php echo $row['precio_actual'] ?>€</del>
 			</div> <!-- price-wrap.// -->
 		</div> <!-- bottom-wrap.// -->
 	</figure>

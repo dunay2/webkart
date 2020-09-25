@@ -1,0 +1,23 @@
+
+  <div class="container">
+    <h1>Login form</h1>
+    <p>Please enter your user and passowrd to enter the restricted area.</p>
+    <form method="post" action="" name="signin-form">
+        <div class="row">
+            <div class="form-group col-lg-3">
+                <label for="code">User name</label>
+                <input type="text" class="form-control"  name="username" pattern="[a-zA-Z0-9]+" required value="user"/>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-lg-3 ">
+                <label for="code">Password</label>                
+                <input type="password"  name="password" class="form-control input-normal"   required value="pass"/>
+            </div>
+        </div>
+        <div class="row">
+            <button type="submit" class="btn btn-default" name="login" required value="pass">login</button>
+        </div>
+    </form>
+</div>

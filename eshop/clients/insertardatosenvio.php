@@ -15,8 +15,8 @@
     $conexion->next_result();
     $query = $conexion->query($sql);
     
-    $fila = mysqli_fetch_array($query);
+    $row = mysqli_fetch_array($query);
 
-    $invoiceID = $fila['id'];    
+    $invoiceID = $row['id'];    
     
 ?>

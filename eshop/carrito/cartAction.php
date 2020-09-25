@@ -1,4 +1,7 @@
 <?php
+
+session_start();        
+
 const TARJETA = '01';
 const MODO_ENVIO_WEB = '01';
 const ESTADO_PAGADO = 'PA';
@@ -9,9 +12,34 @@ $estado = ESTADO_PAGADO;
 // initialize shopping cart class
 include 'Cart.php';
 $cart = new Cart;
+
+
 // include database configuration file
-require ("includes/conexion.php");
-//require_once
+if (!empty($_GET['id'] && $_GET['myaction']=='updateCartItem'))
+
+    {
+        require_once("./../includes/conexion.php");
+        $myaction = $_GET['myaction'];
+        $id = $_GET['id'];
+    }
+else
+{
+    require_once ("includes/conexion.php");
+}
+
+
+if (isset($myaction) &&  $myaction == 'updateCartItem')
+{
+
+    $itemData = array(
+        'rowid' => $id,
+        'qty' => $_REQUEST['qty']
+    );
+    $updateItem = $cart->update($itemData);
+    echo $updateItem ? 'ok' : 'err';
+    die;
+}
+
 if (isset($myaction) && !empty($myaction))
 {
 
@@ -40,17 +68,9 @@ if (isset($myaction) && !empty($myaction))
         $redirectLoc = '?menu=viewcart';
 
         header("Location: " . $redirectLoc);
+    
     }
-    elseif ($myaction == 'updateCartItem' && !empty($id_producto))
-    {
-        $itemData = array(
-            'rowid' => $id_producto,
-            'qty' => $_REQUEST['qty']
-        );
-        $updateItem = $cart->update($itemData);
-        echo $updateItem ? 'ok' : 'err';
-        die;
-    }
+  
     elseif ($myaction == 'placeorder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
     {     
      include_once('placeorder.php');     
@@ -58,13 +78,13 @@ if (isset($myaction) && !empty($myaction))
     else
     {
 
-        $redirectLoc = '?menu=index';
+        $redirectLoc = '?menu=index434343';
         header("Location: " . $redirectLoc);
 
     }
 }
-else
-{
+
+else{
     $redirectLoc = '?menu=index';
     header("Location: " . $redirectLoc);
 
