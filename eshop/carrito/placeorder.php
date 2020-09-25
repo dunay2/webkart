@@ -1,6 +1,6 @@
 <?php
 
-require_once('clientes/insertarDatosEnvio.php');
+require_once('clientes/insertardatosenvio.php');
 
 // insert order details into database
         //$_SESSION['sessCustomerID'] =2;
@@ -46,7 +46,7 @@ require_once('clientes/insertarDatosEnvio.php');
 
             $cart->destroy();
 
-            $redirectLoc = '?menu=orderSuccess&id=' . $orderID;
+            $redirectLoc = '?menu=ordersuccess&id=' . $orderID;
 
             header("Location: " . $redirectLoc);
 

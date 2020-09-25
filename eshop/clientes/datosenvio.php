@@ -1,6 +1,6 @@
 <div class="container">
 		  <h2>Detalles de envío</h2>
-		  <form action='?menu=carrito&action=placeOrder' method='post'>
+		  <form action='?menu=carrito&action=placeorder' method='post'>
               
           <div class="form-row">         
 

@@ -51,7 +51,7 @@ if (isset($myaction) && !empty($myaction))
         echo $updateItem ? 'ok' : 'err';
         die;
     }
-    elseif ($myaction == 'placeOrder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
+    elseif ($myaction == 'placeorder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
     {     
      include_once('placeorder.php');     
     }

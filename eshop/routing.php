@@ -1,23 +1,25 @@
 <?php 
 	
+	$page='home/index.php';
+
 	if (!empty($_GET)) {
 
 		$menu=$_GET['menu'];
-		$page='';
+		
 		switch ($menu) {
 			case 'registroclientes':
-				$page='clientes/registrar.php';
+				$page='clientes/register.php';
 				break;
 			case 'categoria':
-				$page='productos/productos.php';						
+				$page='products/products.php';						
 				$mycategory=$_GET['categoria'];				
 				break;
 			case 'producto':
 				$myproduct=$_GET['producto'];
-				$page='productos/producto.php';
+				$page='products/product.php';
 				break;
 			case 'allproducts':
-				$page='productos/productos.php';
+				$page='products/products.php';
 				break;
 			case 'carrito':
 				$myaction=$_GET['action'];
@@ -25,30 +27,25 @@
 				$productID=$_GET['id'];		
 				if (isset($_GET['quantity'])) 
 				$quantity=$_GET['quantity'];					
-				$page='carrito/cartAction.php';
+				$page='carrito/cartaction.php';
 				break;
 			case 'viewcart':				
 				$page='carrito/viewcart.php';				
 				break;
 			case 'datosenvio':				
-					$page='clientes/datosenvio.php';				
-					break;
-			case 'checkout':				
-				$page='carrito/checkOut.php';
+				$page='clientes/datosenvio.php';				
 				break;
-			case 'orderSuccess':					
+			case 'checkout':				
+				$page='carrito/checkout.php';
+				break;
+			case 'ordersuccess':									
 				if (isset($_GET['id'])) 
 				$id=$_GET['id'];
-				$page='carrito/orderSuccess.php';
+				$page='carrito/ordersuccess.php';
 				break;
+		}				
+	}
+
+	require_once($page);
 	
-		}
-
-		require_once($page);
-	}
-	else
-	{
-		require_once('home/index.php');
-	}
-
  ?>
