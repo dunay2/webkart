@@ -44,6 +44,10 @@
 				$page='carrito/ordersuccess.php';
 				break;
 
+			case 'contact':									
+				$page='common/contact.html';
+				break;
+
 			//admin menu
 			case 'showorders':					
 				$page='admin/showorders.php';

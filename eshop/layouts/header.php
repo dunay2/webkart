@@ -88,7 +88,7 @@ ob_start( );
                     <a class="nav-link" href="?menu=registroclientes">Registro</a>
 				</li>
 				<li class="nav-item">
-                    <a class="nav-link" href="contact.html">Contacto</a>
+                    <a class="nav-link" href="?menu=contact">Contacto</a>
                 </li>
             </ul>
 
@@ -114,21 +114,12 @@ ob_start( );
 
         <a  href="?menu=login"><span class="navbar-brand mb-0 h1"> Log in</span>	  </a>
         
+
+
+    </li>
 <?php    
-
-echo "estado es " . session_status();
-if (session_status() == PHP_SESSION_ACTIVE) {
-    echo 'Session is active';
-  }
-
 if (isset($_SESSION['user_id']))
-{
-    echo "<br>valor de sesion " . $_SESSION['user_id'];
-    echo "<br>";
-}
-    
+echo "<br>Identificador de sesión: " . $_SESSION['user_id'];        
 ?>   
-
-	</li>
 
 </nav>

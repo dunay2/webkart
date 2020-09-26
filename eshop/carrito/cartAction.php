@@ -43,9 +43,11 @@ if (isset($myaction) &&  $myaction == 'updateCartItem')
 if (isset($myaction) && !empty($myaction))
 {
 
-    if ($myaction == 'addToCart' && !empty($productID))
+    switch  ($myaction)
     {
-        // get product details
+    case 'addToCart':
+        if (!empty($productID))
+        {
         $query = $conexion->query("CALL getProduct('ES','$productID')");
         $row = $query->fetch_assoc();
         $itemData = array(
@@ -61,27 +63,30 @@ if (isset($myaction) && !empty($myaction))
         ob_end_clean();
         header("Location: " . $redirectLoc);
         exit;
-    }
-    elseif ($myaction == 'removeCartItem' && !empty($productID))
-    {
-        $deleteItem = $cart->remove($productID);
-        $redirectLoc = '?menu=viewcart';
+        }
+    break;
+    case 'removeCartItem';
+        if(!empty($productID))
+        {
+            $deleteItem = $cart->remove($productID);
+            $redirectLoc = '?menu=viewcart';
+            header("Location: " . $redirectLoc);
+        }
+    break;
+    case 'placeorder':
+        
+        if($cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
+        {
+            include_once('placeorder.php');     
+        }
 
-        header("Location: " . $redirectLoc);
-    
-    }
-  
-    elseif ($myaction == 'placeorder' && $cart->total_items() > 0 && !empty($_SESSION['sessCustomerID']))
-    {     
-     include_once('placeorder.php');     
-    }
-    else
-    {
+    break;
 
-        $redirectLoc = '?menu=index434343';
-        header("Location: " . $redirectLoc);
+    default:
+    $redirectLoc = '?menu=index';
+    header("Location: " . $redirectLoc);
 
-    }
+    }    
 }
 
 else{
@@ -89,4 +94,3 @@ else{
     header("Location: " . $redirectLoc);
 
 }
-
