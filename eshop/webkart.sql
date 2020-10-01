@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 23-09-2020 a las 13:39:18
+-- Tiempo de generación: 01-10-2020 a las 13:23:10
 -- Versión del servidor: 10.4.14-MariaDB
 -- Versión de PHP: 7.4.10
 
@@ -25,17 +25,51 @@ DELIMITER $$
 --
 -- Procedimientos
 --
+CREATE DEFINER=`root`@`localhost` PROCEDURE `changeOrderStatus` (IN `idOrder` INT, IN `idstatus` VARCHAR(2))  NO SQL
+UPDATE `tm_pedido` SET `hora_entrega` = NULL, `id_estado` = idstatus WHERE `tm_pedido`.`id_pedido` = idOrder$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `createInvoice` (IN `nif` VARCHAR(20), IN `sendname` VARCHAR(50), IN `sendlastname` VARCHAR(50), IN `sendaddress` VARCHAR(400), IN `zip` VARCHAR(20), IN `state` VARCHAR(50), IN `countrycode` VARCHAR(3), IN `email` VARCHAR(200))  NO SQL
+BEGIN
+    INSERT INTO `tm_factura_envio` ( `nif`, `nombre`, `apellidos`, `direccion`, `poblacion`, `codigo_postal`, `id_pais`, `email`, `nombreenv`, `apellidoenv`, `direccionenv`, `codigo_postalenv`, `poblacionenv`, `id_paisenv`) VALUES ( nif, '', '', '', '', '', '', email, sendname, sendlastname , sendaddress, zip, state, countrycode);
+
+SELECT LAST_INSERT_ID() id;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `createUser` (IN `username` VARCHAR(25), IN `userpassword` VARCHAR(255), IN `email` VARCHAR(100))  NO SQL
+INSERT INTO `tm_users` (`id`, `username`, `password`, `email`) VALUES (NULL, username, userpassword, email)$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `getCategories` (IN `idioma` VARCHAR(2))  NO SQL
 select `tid`.`id_tipo_producto` AS `id_tipo_producto`,`tid`.`descripcion` AS `descripcion`,`ti`.`imagen` AS `imagen`, comentario, footer  from `webkart`.`ti_desc_tip_producto` `tid` join `webkart`.`tm_tipo_producto` `ti` where `tid`.`id_tipo_producto` = `ti`.`id_tipo_producto` and `tid`.`id_idioma` = idioma$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `getClient` (IN `idCliente` VARCHAR(10))  NO SQL
-SELECT c.id_cliente,  cr.email , cr.telefono, cr.direccion  FROM tm_cliente_registrado  cr
+SELECT c.id_cliente,cr.nombre, cr.email , cr.telefono, cr.direccion  FROM tm_cliente_registrado  cr
 right join
 tm_cliente c
 on  cr.id_cliente=c.id_cliente
 where c.id_cliente=idcliente$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `getProduct` (IN `idioma` VARCHAR(2), IN `id_producto` VARCHAR(10))  NO SQL
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getCountries` ()  NO SQL
+select iso,nombre from tm_paises$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getOrderDetail` (IN `idfactenv` INT)  NO SQL
+SELECT 
+fe.nif,
+fe.email,
+fe.nombreenv,
+fe.apellidoenv,
+fe.direccionenv,
+fe.codigo_postalenv,
+fe.poblacionenv,
+pa.nombre pais
+FROM `tm_factura_envio` fe, tm_paises pa 
+where fe.id_paisenv = pa.iso
+and fe.id_fact_env=idfactenv$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getOrders` (IN `idioma` VARCHAR(2))  NO SQL
+select tp.id_pedido, cr.nif, cr.nombre, cr.apellidos, tp.fecha_pedido, tp.total_pedido, tmp.descripcion modo_pago, timm.descripcion modo_envio, tp.id_fact_env from tm_pedido tp, ti_modo_pago tmp, ti_modo_envio timm, tm_cliente_registrado cr where tp.id_pago=tmp.id_pago and tp.id_envio=timm.id_envio and tmp.id_idioma=timm.id_idioma and tp.id_cliente=cr.id_cliente and tmp.id_idioma=idioma$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getProduct` (IN `idioma` VARCHAR(2), IN `id_producto` VARCHAR(20))  NO SQL
 select TD.id_producto,TD.descripcion_corta,
 td.descripcion_larga
 ,TD.id_idioma,TP.precio_actual,tp.precio_oferta, TP.imagen from ti_desc_producto td, tm_producto tp where tp.id_producto
@@ -54,6 +88,47 @@ select TD.id_producto,TD.descripcion_corta,
 SUBSTRING(TD.descripcion_larga, 1, 100) descripcion_larga
 ,TD.id_idioma,TP.precio_actual,tp.precio_oferta, TP.imagen from ti_desc_producto td, tm_producto tp where tp.id_producto
 =td.id_producto and td.id_idioma=idioma$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getUser` (IN `username` VARCHAR(25))  NO SQL
+select * from tm_users tmu where tmu.username=username$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getUserByEmail` (IN `email` VARCHAR(100))  NO SQL
+SELECT * FROM tm_users tmu WHERE tmu.EMAIL=email$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `placeOrder` (IN `idCliente` VARCHAR(10), IN `total` DECIMAL(10,2), IN `ip` VARCHAR(15), IN `idpago` VARCHAR(10), IN `idenvio` VARCHAR(10), IN `idfactenv` INT)  NO SQL
+BEGIN 
+
+INSERT INTO `tm_pedido` ( 
+     `id_cliente`, `id_fact_env`, `total_pedido`,
+     `fecha_pedido`, `hora_inicio_compra`, `hora_fin_compra`,
+     `direc_ip_compra`, `num_transaccion`, `fecha_transaccion`,
+     `id_resultado_transaccion`, `fecha_entrega`, 
+     `hora_entrega`,
+     `id_pago`, 
+     `id_estado`, 
+     `id_envio`
+      ) 
+     VALUES ( idcliente, idfactenv,
+     total, 
+     current_timestamp(),
+     current_timestamp(),
+     current_timestamp(),
+     ip,
+     NULL,
+     NULL,
+     NULL, NULL,
+     NULL, idpago, 'CR', idenvio);
+     
+	SELECT LAST_INSERT_ID() id;
+     
+     END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `placeOrderDetail` (IN `idLine` INT, IN `idOrder` INT, IN `idProd` VARCHAR(20), IN `units` INT, IN `price` DECIMAL(10,2))  NO SQL
+begin
+
+INSERT INTO `tm_linea_pedido` (`id_linea`, `id_pedido`, `id_producto`, 	`unidades`, `precio_unitario_bruto`, `precio_neto`) VALUES (idLine , idOrder,idProd,units, price, price*units);
+
+end$$
 
 DELIMITER ;
 
@@ -82,13 +157,17 @@ INSERT INTO `ti_desc_producto` (`id_producto`, `id_idioma`, `descripcion_corta`,
 ('PLATAPAIS', 'EN', 'Plátano del país', 'El plátano o banano es una fruta amarilla, de forma alargada, que encontramos en el mercado en grupos de tres a veinte, de forma similar a un pepino triangular, oblongo y normalmente de color amarillo. Su sabor es más o menos dulce según la variedad.'),
 ('SANDIAPAIS', 'EN', 'Sandia del país', 'La sandía es un fruto grande y de forma más o menos esférica que suele consumirse cruda como postre. Su pulpa es de color rojizo o amarillento y de sabor dulce. Resulta un alimento muy refrescante que aporta muy pocas calorías al organismo, también aporta algunas vitaminas y minerales.'),
 ('TOMATEPAIS', 'EN', 'Tomate del país', 'El tomate es la hortaliza de mayor importancia en el mundo. Se cultiva en todo el mundo, siendo los principales países productores China y Estados Unidos. Se consume de múltiples maneras, tanto en crudo como procesado para la industria. Hoy en día existen multitud de variedades, cultivadas durante todo el año, y con frutos de distintos tamaños, formas y colores. Además, es un alimento rico en fibra y bajo en calorías que aporta vitaminas y minerales..'),
+('VANSA', 'EN', ' Zapatillas para Hombre', 'Vans Atwood Canvas, Zapatillas para Hombre\r\nMaterial exterior: Lona\r\nRevestimiento: Tela\r\nMaterial de la suela: Caucho\r\nCierre: Cordones\r\nTipo de tacón: Plano\r\nAnchura del zapato: Normal\r\n'),
+('VANSAUNI', 'EN', 'Zapatillas Unisex Niños', 'Vans Ward Canvas Zapatillas, Unisex Niños\r\nEnvío GRATIS.\r\nDevoluciones GRATIS\r\nAhorras:	6,42 € (14%)\r\n'),
 ('COLIFLORPAIS', 'ES', 'Coliflor del país', 'La coliflor es una hortaliza perteneciente a la familia de las coles. La parte que se consume es la flor o inflorescencia, muy apreciada por su sabor. Se puede utilizar de distintas maneras, tanto cruda como cocinada. Es una fuente importante de vitaminas y minerales. Además aporta fibra y es un alimento bajo en calorías.'),
 ('MELONPAIS', 'ES', 'Melón del país', 'El melón puede ser redondo o alargado, de corteza amarilla, verde o combinada según la variedad. La pulpa es aromática, jugosa y dulce, resultando una fruta ideal para calmar la sed.'),
 ('NARPAIS', 'ES', 'Naranja del país', 'La naranja es un fruto redondo, color naranja, consumido mayoritariamente en invierno. La pulpa del interior es también anaranjada y está formada por pequeñas bolsitas llenas de zumo.\r\nLa naranja se usa para consumo en fresco y, para la industria, principalmente en zumo.'),
 ('PERPAIS', 'ES', 'Pera del país', 'La pera es un fruto muy extendido hoy en día por todo el mundo, que se consume tanto en fresco como cocinada, y que está disponible durante todo el año.\r\nExisten numerosas variedades cultivadas, que varían tanto en forma como en tamaño y colores.'),
 ('PLATAPAIS', 'ES', 'Plátano del país', 'El plátano o banano es una fruta amarilla, de forma alargada, que encontramos en el mercado en grupos de tres a veinte, de forma similar a un pepino triangular, oblongo y normalmente de color amarillo. Su sabor es más o menos dulce según la variedad.'),
 ('SANDIAPAIS', 'ES', 'Sandia del país', 'La sandía es un fruto grande y de forma más o menos esférica que suele consumirse cruda como postre. Su pulpa es de color rojizo o amarillento y de sabor dulce. Resulta un alimento muy refrescante que aporta muy pocas calorías al organismo, también aporta algunas vitaminas y minerales.'),
-('TOMATEPAIS', 'ES', 'Tomate del país', 'El tomate es la hortaliza de mayor importancia en el mundo. Se cultiva en todo el mundo, siendo los principales países productores China y Estados Unidos. Se consume de múltiples maneras, tanto en crudo como procesado para la industria. Hoy en día existen multitud de variedades, cultivadas durante todo el año, y con frutos de distintos tamaños, formas y colores. Además, es un alimento rico en fibra y bajo en calorías que aporta vitaminas y minerales.');
+('TOMATEPAIS', 'ES', 'Tomate del país', 'El tomate es la hortaliza de mayor importancia en el mundo. Se cultiva en todo el mundo, siendo los principales países productores China y Estados Unidos. Se consume de múltiples maneras, tanto en crudo como procesado para la industria. Hoy en día existen multitud de variedades, cultivadas durante todo el año, y con frutos de distintos tamaños, formas y colores. Además, es un alimento rico en fibra y bajo en calorías que aporta vitaminas y minerales.'),
+('VANSA', 'ES', ' Zapatillas para Hombre', 'Vans Atwood Canvas, Zapatillas para Hombre\r\nMaterial exterior: Lona\r\nRevestimiento: Tela\r\nMaterial de la suela: Caucho\r\nCierre: Cordones\r\nTipo de tacón: Plano\r\nAnchura del zapato: Normal\r\n'),
+('VANSAUNI', 'ES', 'Zapatillas Unisex Niños', 'Vans Ward Canvas Zapatillas, Unisex Niños\r\nEnvío GRATIS.\r\nDevoluciones GRATIS\r\nAhorras:	6,42 € (14%)\r\n');
 
 -- --------------------------------------------------------
 
@@ -130,6 +209,18 @@ CREATE TABLE `ti_estado_pedido` (
   `descripcion` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Volcado de datos para la tabla `ti_estado_pedido`
+--
+
+INSERT INTO `ti_estado_pedido` (`id_estado`, `id_idioma`, `descripcion`) VALUES
+('CR', 'EN', 'CREATION'),
+('CR', 'ES', 'CREACION'),
+('PA', 'EN', 'PAID'),
+('PA', 'ES', 'PAGADO'),
+('PE', 'EN', 'PENDING'),
+('PE', 'ES', 'PENDIENTE');
+
 -- --------------------------------------------------------
 
 --
@@ -142,6 +233,14 @@ CREATE TABLE `ti_modo_envio` (
   `descripcion` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Volcado de datos para la tabla `ti_modo_envio`
+--
+
+INSERT INTO `ti_modo_envio` (`id_envio`, `id_idioma`, `descripcion`) VALUES
+('01', 'EN', 'WEB'),
+('01', 'ES', 'WEB');
+
 -- --------------------------------------------------------
 
 --
@@ -151,8 +250,16 @@ CREATE TABLE `ti_modo_envio` (
 CREATE TABLE `ti_modo_pago` (
   `id_pago` varchar(4) NOT NULL,
   `id_idioma` varchar(2) NOT NULL,
-  `decripcion` varchar(20) DEFAULT NULL
+  `descripcion` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Volcado de datos para la tabla `ti_modo_pago`
+--
+
+INSERT INTO `ti_modo_pago` (`id_pago`, `id_idioma`, `descripcion`) VALUES
+('01', 'EN', 'CREDIT CARD'),
+('01', 'ES', 'TARJETA DE CREDITO');
 
 -- --------------------------------------------------------
 
@@ -249,7 +356,9 @@ INSERT INTO `tm_desc_producto` (`id_producto`, `id_tipo_producto`) VALUES
 ('PLATAPAIS', 'ALIM01'),
 ('SANDIAPAIS', 'ALIM01'),
 ('TOMATEPAIS', 'ALIM01'),
-('UVAVPAIS', 'ALIM01');
+('UVAVPAIS', 'ALIM01'),
+('VANSA', 'CALZ01'),
+('VANSAUNI', 'CALZ01');
 
 -- --------------------------------------------------------
 
@@ -261,6 +370,15 @@ CREATE TABLE `tm_estado_pedido` (
   `id_estado` varchar(2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Volcado de datos para la tabla `tm_estado_pedido`
+--
+
+INSERT INTO `tm_estado_pedido` (`id_estado`) VALUES
+('CR'),
+('PA'),
+('PE');
+
 -- --------------------------------------------------------
 
 --
@@ -268,24 +386,68 @@ CREATE TABLE `tm_estado_pedido` (
 --
 
 CREATE TABLE `tm_factura_envio` (
-  `id_fact_env` varchar(30) NOT NULL,
+  `id_fact_env` bigint(20) NOT NULL,
   `nif` varchar(20) NOT NULL,
-  `nombre` varchar(50) NOT NULL,
-  `apellidos` varchar(50) NOT NULL,
-  `direccion` varchar(150) NOT NULL,
-  `poblacion` varchar(150) NOT NULL,
-  `codigo_postal` varchar(50) NOT NULL,
-  `pais` varchar(50) NOT NULL,
-  `telefono` varchar(20) NOT NULL,
-  `fax` varchar(20) NOT NULL,
+  `nombre` varchar(50) DEFAULT NULL,
+  `apellidos` varchar(50) DEFAULT NULL,
+  `direccion` varchar(150) DEFAULT NULL,
+  `poblacion` varchar(150) DEFAULT NULL,
+  `codigo_postal` varchar(50) DEFAULT NULL,
+  `id_pais` varchar(3) DEFAULT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `fax` varchar(20) DEFAULT NULL,
   `email` varchar(200) NOT NULL,
-  `nombreenv` varchar(50) DEFAULT NULL,
-  `apellidoenv` varchar(50) DEFAULT NULL,
-  `direccionenv` varchar(400) DEFAULT NULL,
-  `codigo_postalenv` varchar(20) DEFAULT NULL,
-  `poblacionenv` varchar(50) DEFAULT NULL,
-  `id_paisenv` varchar(3) DEFAULT NULL
+  `nombreenv` varchar(50) NOT NULL,
+  `apellidoenv` varchar(50) NOT NULL,
+  `direccionenv` varchar(400) NOT NULL,
+  `codigo_postalenv` varchar(20) NOT NULL,
+  `poblacionenv` varchar(50) NOT NULL,
+  `id_paisenv` varchar(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Volcado de datos para la tabla `tm_factura_envio`
+--
+
+INSERT INTO `tm_factura_envio` (`id_fact_env`, `nif`, `nombre`, `apellidos`, `direccion`, `poblacion`, `codigo_postal`, `id_pais`, `telefono`, `fax`, `email`, `nombreenv`, `apellidoenv`, `direccionenv`, `codigo_postalenv`, `poblacionenv`, `id_paisenv`) VALUES
+(1, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(2, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(3, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(4, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(5, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(6, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(7, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(8, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(9, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(10, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(11, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(12, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(13, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(14, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(15, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(16, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(17, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(18, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(19, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(20, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(21, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(22, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'DZ'),
+(23, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(24, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(25, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(26, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(27, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(28, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(29, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(30, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(31, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(32, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(33, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(34, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(35, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AF'),
+(36, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'LC'),
+(37, '45646', '', '', '', '', '', '', NULL, NULL, 'email@mail.com', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AR'),
+(38, 'aaaa', '', '', '', '', '', '', NULL, NULL, 'email@mail.comh', 'nombre', 'apellidos', 'direccion', '35300', 'poblacion', 'AZ');
 
 -- --------------------------------------------------------
 
@@ -313,13 +475,13 @@ INSERT INTO `tm_idioma` (`id_idioma`, `descripcion`) VALUES
 --
 
 CREATE TABLE `tm_linea_pedido` (
-  `id_linea` varchar(2) NOT NULL,
-  `id_pedido` varchar(10) NOT NULL,
+  `id_linea` tinyint(10) NOT NULL,
+  `id_pedido` bigint(10) NOT NULL,
   `id_producto` varchar(20) NOT NULL,
   `unidades` int(11) NOT NULL,
-  `precio_unitario_bruto` decimal(2,0) NOT NULL,
+  `precio_unitario_bruto` decimal(10,2) NOT NULL,
   `dto` decimal(2,0) DEFAULT NULL,
-  `precio_neto` decimal(2,0) NOT NULL,
+  `precio_neto` decimal(10,2) NOT NULL,
   `descripcion` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -333,6 +495,13 @@ CREATE TABLE `tm_modo_envio` (
   `id_envio` varchar(2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Volcado de datos para la tabla `tm_modo_envio`
+--
+
+INSERT INTO `tm_modo_envio` (`id_envio`) VALUES
+('01');
+
 -- --------------------------------------------------------
 
 --
@@ -343,6 +512,271 @@ CREATE TABLE `tm_modo_pago` (
   `id_pago` varchar(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Volcado de datos para la tabla `tm_modo_pago`
+--
+
+INSERT INTO `tm_modo_pago` (`id_pago`) VALUES
+('01');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `tm_paises`
+--
+
+CREATE TABLE `tm_paises` (
+  `id` int(11) NOT NULL,
+  `iso` char(2) DEFAULT NULL,
+  `nombre` varchar(80) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Volcado de datos para la tabla `tm_paises`
+--
+
+INSERT INTO `tm_paises` (`id`, `iso`, `nombre`) VALUES
+(1, 'AF', 'Afganistán'),
+(2, 'AX', 'Islas Gland'),
+(3, 'AL', 'Albania'),
+(4, 'DE', 'Alemania'),
+(5, 'AD', 'Andorra'),
+(6, 'AO', 'Angola'),
+(7, 'AI', 'Anguilla'),
+(8, 'AQ', 'Antártida'),
+(9, 'AG', 'Antigua y Barbuda'),
+(10, 'AN', 'Antillas Holandesas'),
+(11, 'SA', 'Arabia Saudí'),
+(12, 'DZ', 'Argelia'),
+(13, 'AR', 'Argentina'),
+(14, 'AM', 'Armenia'),
+(15, 'AW', 'Aruba'),
+(16, 'AU', 'Australia'),
+(17, 'AT', 'Austria'),
+(18, 'AZ', 'Azerbaiyán'),
+(19, 'BS', 'Bahamas'),
+(20, 'BH', 'Bahréin'),
+(21, 'BD', 'Bangladesh'),
+(22, 'BB', 'Barbados'),
+(23, 'BY', 'Bielorrusia'),
+(24, 'BE', 'Bélgica'),
+(25, 'BZ', 'Belice'),
+(26, 'BJ', 'Benin'),
+(27, 'BM', 'Bermudas'),
+(28, 'BT', 'Bhután'),
+(29, 'BO', 'Bolivia'),
+(30, 'BA', 'Bosnia y Herzegovina'),
+(31, 'BW', 'Botsuana'),
+(32, 'BV', 'Isla Bouvet'),
+(33, 'BR', 'Brasil'),
+(34, 'BN', 'Brunéi'),
+(35, 'BG', 'Bulgaria'),
+(36, 'BF', 'Burkina Faso'),
+(37, 'BI', 'Burundi'),
+(38, 'CV', 'Cabo Verde'),
+(39, 'KY', 'Islas Caimán'),
+(40, 'KH', 'Camboya'),
+(41, 'CM', 'Camerún'),
+(42, 'CA', 'Canadá'),
+(43, 'CF', 'República Centroafricana'),
+(44, 'TD', 'Chad'),
+(45, 'CZ', 'República Checa'),
+(46, 'CL', 'Chile'),
+(47, 'CN', 'China'),
+(48, 'CY', 'Chipre'),
+(49, 'CX', 'Isla de Navidad'),
+(50, 'VA', 'Ciudad del Vaticano'),
+(51, 'CC', 'Islas Cocos'),
+(52, 'CO', 'Colombia'),
+(53, 'KM', 'Comoras'),
+(54, 'CD', 'República Democrática del Congo'),
+(55, 'CG', 'Congo'),
+(56, 'CK', 'Islas Cook'),
+(57, 'KP', 'Corea del Norte'),
+(58, 'KR', 'Corea del Sur'),
+(59, 'CI', 'Costa de Marfil'),
+(60, 'CR', 'Costa Rica'),
+(61, 'HR', 'Croacia'),
+(62, 'CU', 'Cuba'),
+(63, 'DK', 'Dinamarca'),
+(64, 'DM', 'Dominica'),
+(65, 'DO', 'República Dominicana'),
+(66, 'EC', 'Ecuador'),
+(67, 'EG', 'Egipto'),
+(68, 'SV', 'El Salvador'),
+(69, 'AE', 'Emiratos Árabes Unidos'),
+(70, 'ER', 'Eritrea'),
+(71, 'SK', 'Eslovaquia'),
+(72, 'SI', 'Eslovenia'),
+(73, 'ES', 'España'),
+(74, 'UM', 'Islas ultramarinas de Estados Unidos'),
+(75, 'US', 'Estados Unidos'),
+(76, 'EE', 'Estonia'),
+(77, 'ET', 'Etiopía'),
+(78, 'FO', 'Islas Feroe'),
+(79, 'PH', 'Filipinas'),
+(80, 'FI', 'Finlandia'),
+(81, 'FJ', 'Fiyi'),
+(82, 'FR', 'Francia'),
+(83, 'GA', 'Gabón'),
+(84, 'GM', 'Gambia'),
+(85, 'GE', 'Georgia'),
+(86, 'GS', 'Islas Georgias del Sur y Sandwich del Sur'),
+(87, 'GH', 'Ghana'),
+(88, 'GI', 'Gibraltar'),
+(89, 'GD', 'Granada'),
+(90, 'GR', 'Grecia'),
+(91, 'GL', 'Groenlandia'),
+(92, 'GP', 'Guadalupe'),
+(93, 'GU', 'Guam'),
+(94, 'GT', 'Guatemala'),
+(95, 'GF', 'Guayana Francesa'),
+(96, 'GN', 'Guinea'),
+(97, 'GQ', 'Guinea Ecuatorial'),
+(98, 'GW', 'Guinea-Bissau'),
+(99, 'GY', 'Guyana'),
+(100, 'HT', 'Haití'),
+(101, 'HM', 'Islas Heard y McDonald'),
+(102, 'HN', 'Honduras'),
+(103, 'HK', 'Hong Kong'),
+(104, 'HU', 'Hungría'),
+(105, 'IN', 'India'),
+(106, 'ID', 'Indonesia'),
+(107, 'IR', 'Irán'),
+(108, 'IQ', 'Iraq'),
+(109, 'IE', 'Irlanda'),
+(110, 'IS', 'Islandia'),
+(111, 'IL', 'Israel'),
+(112, 'IT', 'Italia'),
+(113, 'JM', 'Jamaica'),
+(114, 'JP', 'Japón'),
+(115, 'JO', 'Jordania'),
+(116, 'KZ', 'Kazajstán'),
+(117, 'KE', 'Kenia'),
+(118, 'KG', 'Kirguistán'),
+(119, 'KI', 'Kiribati'),
+(120, 'KW', 'Kuwait'),
+(121, 'LA', 'Laos'),
+(122, 'LS', 'Lesotho'),
+(123, 'LV', 'Letonia'),
+(124, 'LB', 'Líbano'),
+(125, 'LR', 'Liberia'),
+(126, 'LY', 'Libia'),
+(127, 'LI', 'Liechtenstein'),
+(128, 'LT', 'Lituania'),
+(129, 'LU', 'Luxemburgo'),
+(130, 'MO', 'Macao'),
+(131, 'MK', 'ARY Macedonia'),
+(132, 'MG', 'Madagascar'),
+(133, 'MY', 'Malasia'),
+(134, 'MW', 'Malawi'),
+(135, 'MV', 'Maldivas'),
+(136, 'ML', 'Malí'),
+(137, 'MT', 'Malta'),
+(138, 'FK', 'Islas Malvinas'),
+(139, 'MP', 'Islas Marianas del Norte'),
+(140, 'MA', 'Marruecos'),
+(141, 'MH', 'Islas Marshall'),
+(142, 'MQ', 'Martinica'),
+(143, 'MU', 'Mauricio'),
+(144, 'MR', 'Mauritania'),
+(145, 'YT', 'Mayotte'),
+(146, 'MX', 'México'),
+(147, 'FM', 'Micronesia'),
+(148, 'MD', 'Moldavia'),
+(149, 'MC', 'Mónaco'),
+(150, 'MN', 'Mongolia'),
+(151, 'MS', 'Montserrat'),
+(152, 'MZ', 'Mozambique'),
+(153, 'MM', 'Myanmar'),
+(154, 'NA', 'Namibia'),
+(155, 'NR', 'Nauru'),
+(156, 'NP', 'Nepal'),
+(157, 'NI', 'Nicaragua'),
+(158, 'NE', 'Níger'),
+(159, 'NG', 'Nigeria'),
+(160, 'NU', 'Niue'),
+(161, 'NF', 'Isla Norfolk'),
+(162, 'NO', 'Noruega'),
+(163, 'NC', 'Nueva Caledonia'),
+(164, 'NZ', 'Nueva Zelanda'),
+(165, 'OM', 'Omán'),
+(166, 'NL', 'Países Bajos'),
+(167, 'PK', 'Pakistán'),
+(168, 'PW', 'Palau'),
+(169, 'PS', 'Palestina'),
+(170, 'PA', 'Panamá'),
+(171, 'PG', 'Papúa Nueva Guinea'),
+(172, 'PY', 'Paraguay'),
+(173, 'PE', 'Perú'),
+(174, 'PN', 'Islas Pitcairn'),
+(175, 'PF', 'Polinesia Francesa'),
+(176, 'PL', 'Polonia'),
+(177, 'PT', 'Portugal'),
+(178, 'PR', 'Puerto Rico'),
+(179, 'QA', 'Qatar'),
+(180, 'GB', 'Reino Unido'),
+(181, 'RE', 'Reunión'),
+(182, 'RW', 'Ruanda'),
+(183, 'RO', 'Rumania'),
+(184, 'RU', 'Rusia'),
+(185, 'EH', 'Sahara Occidental'),
+(186, 'SB', 'Islas Salomón'),
+(187, 'WS', 'Samoa'),
+(188, 'AS', 'Samoa Americana'),
+(189, 'KN', 'San Cristóbal y Nevis'),
+(190, 'SM', 'San Marino'),
+(191, 'PM', 'San Pedro y Miquelón'),
+(192, 'VC', 'San Vicente y las Granadinas'),
+(193, 'SH', 'Santa Helena'),
+(194, 'LC', 'Santa Lucía'),
+(195, 'ST', 'Santo Tomé y Príncipe'),
+(196, 'SN', 'Senegal'),
+(197, 'CS', 'Serbia y Montenegro'),
+(198, 'SC', 'Seychelles'),
+(199, 'SL', 'Sierra Leona'),
+(200, 'SG', 'Singapur'),
+(201, 'SY', 'Siria'),
+(202, 'SO', 'Somalia'),
+(203, 'LK', 'Sri Lanka'),
+(204, 'SZ', 'Suazilandia'),
+(205, 'ZA', 'Sudáfrica'),
+(206, 'SD', 'Sudán'),
+(207, 'SE', 'Suecia'),
+(208, 'CH', 'Suiza'),
+(209, 'SR', 'Surinam'),
+(210, 'SJ', 'Svalbard y Jan Mayen'),
+(211, 'TH', 'Tailandia'),
+(212, 'TW', 'Taiwán'),
+(213, 'TZ', 'Tanzania'),
+(214, 'TJ', 'Tayikistán'),
+(215, 'IO', 'Territorio Británico del Océano Índico'),
+(216, 'TF', 'Territorios Australes Franceses'),
+(217, 'TL', 'Timor Oriental'),
+(218, 'TG', 'Togo'),
+(219, 'TK', 'Tokelau'),
+(220, 'TO', 'Tonga'),
+(221, 'TT', 'Trinidad y Tobago'),
+(222, 'TN', 'Túnez'),
+(223, 'TC', 'Islas Turcas y Caicos'),
+(224, 'TM', 'Turkmenistán'),
+(225, 'TR', 'Turquía'),
+(226, 'TV', 'Tuvalu'),
+(227, 'UA', 'Ucrania'),
+(228, 'UG', 'Uganda'),
+(229, 'UY', 'Uruguay'),
+(230, 'UZ', 'Uzbekistán'),
+(231, 'VU', 'Vanuatu'),
+(232, 'VE', 'Venezuela'),
+(233, 'VN', 'Vietnam'),
+(234, 'VG', 'Islas Vírgenes Británicas'),
+(235, 'VI', 'Islas Vírgenes de los Estados Unidos'),
+(236, 'WF', 'Wallis y Futuna'),
+(237, 'YE', 'Yemen'),
+(238, 'DJ', 'Yibuti'),
+(239, 'ZM', 'Zambia'),
+(240, 'ZW', 'Zimbabue');
+
 -- --------------------------------------------------------
 
 --
@@ -350,14 +784,14 @@ CREATE TABLE `tm_modo_pago` (
 --
 
 CREATE TABLE `tm_pedido` (
-  `id_pedido` varchar(10) NOT NULL,
+  `id_pedido` bigint(10) NOT NULL,
   `id_cliente` varchar(10) NOT NULL,
-  `id_fact_env` varchar(10) NOT NULL,
-  `total_pedido` decimal(10,0) NOT NULL,
-  `fecha_pedido` date NOT NULL,
+  `id_fact_env` bigint(20) DEFAULT NULL,
+  `total_pedido` decimal(10,2) NOT NULL,
+  `fecha_pedido` datetime NOT NULL DEFAULT current_timestamp(),
   `hora_inicio_compra` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `hora_fin_compra` timestamp NULL DEFAULT NULL,
-  `direc_ip_compra` varchar(15) NOT NULL,
+  `hora_fin_compra` timestamp NOT NULL DEFAULT current_timestamp(),
+  `direc_ip_compra` varchar(45) DEFAULT NULL,
   `num_transaccion` varchar(50) DEFAULT NULL,
   `fecha_transaccion` date DEFAULT NULL,
   `id_resultado_transaccion` varchar(10) DEFAULT NULL,
@@ -367,6 +801,32 @@ CREATE TABLE `tm_pedido` (
   `id_estado` varchar(10) NOT NULL,
   `id_envio` varchar(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Volcado de datos para la tabla `tm_pedido`
+--
+
+INSERT INTO `tm_pedido` (`id_pedido`, `id_cliente`, `id_fact_env`, `total_pedido`, `fecha_pedido`, `hora_inicio_compra`, `hora_fin_compra`, `direc_ip_compra`, `num_transaccion`, `fecha_transaccion`, `id_resultado_transaccion`, `fecha_entrega`, `hora_entrega`, `id_pago`, `id_estado`, `id_envio`) VALUES
+(130, '2', 13, '3.56', '2020-09-25 10:53:07', '2020-09-25 09:53:07', '2020-09-25 09:53:07', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'CR', '01'),
+(131, '2', 16, '3.56', '2020-09-25 10:55:20', '2020-09-25 09:55:20', '2020-09-25 09:55:20', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'CR', '01'),
+(132, '2', 17, '3.56', '2020-09-25 10:55:29', '2020-09-25 09:55:29', '2020-09-25 09:55:29', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'CR', '01'),
+(133, '2', 20, '3.56', '2020-09-25 10:56:09', '2020-09-25 09:56:09', '2020-09-25 09:56:09', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'CR', '01'),
+(134, '2', 21, '3.56', '2020-09-25 10:56:32', '2020-09-25 09:56:33', '2020-09-25 09:56:32', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(135, '2', 22, '4.40', '2020-09-25 10:57:23', '2020-09-25 09:57:23', '2020-09-25 09:57:23', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(136, '2', 25, '2.76', '2020-09-25 11:35:13', '2020-09-25 10:35:13', '2020-09-25 10:35:13', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(137, '2', 26, '1.57', '2020-09-25 11:37:10', '2020-09-25 10:37:10', '2020-09-25 10:37:10', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(138, '2', 27, '4.40', '2020-09-25 11:51:38', '2020-09-25 10:51:38', '2020-09-25 10:51:38', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(139, '2', 28, '1.10', '2020-09-25 11:53:23', '2020-09-25 10:53:23', '2020-09-25 10:53:23', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(140, '2', 29, '1.10', '2020-09-25 12:01:58', '2020-09-25 11:01:58', '2020-09-25 11:01:58', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(141, '2', 30, '1.10', '2020-09-25 13:06:31', '2020-09-25 12:06:31', '2020-09-25 12:06:31', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(142, '2', 31, '1.98', '2020-09-25 13:06:53', '2020-09-25 12:06:53', '2020-09-25 12:06:53', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(143, '2', 32, '15.55', '2020-09-25 17:38:11', '2020-09-25 16:38:11', '2020-09-25 16:38:11', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(144, '2', 33, '60.42', '2020-09-26 11:49:46', '2020-09-26 10:49:47', '2020-09-26 10:49:46', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(145, '2', 34, '127.05', '2020-09-26 12:48:01', '2020-09-26 11:48:01', '2020-09-26 11:48:01', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(146, '2', 35, '1.10', '2020-09-26 12:48:55', '2020-09-26 11:48:55', '2020-09-26 11:48:55', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(147, '1', 36, '2.98', '2020-09-26 12:51:37', '2020-09-26 11:51:37', '2020-09-26 11:51:37', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(148, '2', 37, '141.87', '2020-09-29 12:08:15', '2020-09-29 11:08:15', '2020-09-29 11:08:15', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01'),
+(149, '2', 38, '154.32', '2020-09-29 12:15:49', '2020-09-29 11:15:49', '2020-09-29 11:15:49', '::1', NULL, NULL, NULL, NULL, NULL, '01', 'PA', '01');
 
 -- --------------------------------------------------------
 
@@ -391,6 +851,7 @@ CREATE TABLE `tm_producto` (
 --
 
 INSERT INTO `tm_producto` (`id_producto`, `precio_actual`, `es_oferta`, `precio_oferta`, `reserva_inicial`, `reserva_actual`, `reserva_notificacion`, `stock`, `imagen`) VALUES
+('ARRIGOB1', '37.00', 'S', '35.00', NULL, NULL, NULL, '0', NULL),
 ('COLIFLORPAIS', '1.35', 'S', '1.19', NULL, NULL, NULL, '500', NULL),
 ('MELONPAIS', '0.99', 'S', '0.67', NULL, NULL, NULL, '500', NULL),
 ('NARPAIS', '1.20', 'S', '1.10', NULL, NULL, NULL, '200', NULL),
@@ -398,7 +859,9 @@ INSERT INTO `tm_producto` (`id_producto`, `precio_actual`, `es_oferta`, `precio_
 ('PLATAPAIS', '1.70', 'S', '1.57', NULL, NULL, NULL, '500', 0xffd8ffe000104a46494600010101004800480000ffe20c584943435f50524f46494c4500010100000c484c696e6f021000006d6e74725247422058595a2007ce00020009000600310000616373704d5346540000000049454320735247420000000000000000000000000000f6d6000100000000d32d4850202000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001163707274000001500000003364657363000001840000006c77747074000001f000000014626b707400000204000000147258595a00000218000000146758595a0000022c000000146258595a0000024000000014646d6e640000025400000070646d6464000002c400000088767565640000034c0000008676696577000003d4000000246c756d69000003f8000000146d6561730000040c0000002474656368000004300000000c725452430000043c0000080c675452430000043c0000080c625452430000043c0000080c7465787400000000436f70797269676874202863292031393938204865776c6574742d5061636b61726420436f6d70616e790000646573630000000000000012735247422049454336313936362d322e31000000000000000000000012735247422049454336313936362d322e31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058595a20000000000000f35100010000000116cc58595a200000000000000000000000000000000058595a200000000000006fa2000038f50000039058595a2000000000000062990000b785000018da58595a2000000000000024a000000f840000b6cf64657363000000000000001649454320687474703a2f2f7777772e6965632e636800000000000000000000001649454320687474703a2f2f7777772e6965632e63680000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064657363000000000000002e4945432036313936362d322e312044656661756c742052474220636f6c6f7572207370616365202d207352474200000000000000000000002e4945432036313936362d322e312044656661756c742052474220636f6c6f7572207370616365202d20735247420000000000000000000000000000000000000000000064657363000000000000002c5265666572656e63652056696577696e6720436f6e646974696f6e20696e2049454336313936362d322e3100000000000000000000002c5265666572656e63652056696577696e6720436f6e646974696f6e20696e2049454336313936362d322e31000000000000000000000000000000000000000000000000000076696577000000000013a4fe00145f2e0010cf140003edcc0004130b00035c9e0000000158595a2000000000004c09560050000000571fe76d6561730000000000000001000000000000000000000000000000000000028f0000000273696720000000004352542063757276000000000000040000000005000a000f00140019001e00230028002d00320037003b00400045004a004f00540059005e00630068006d00720077007c00810086008b00900095009a009f00a400a900ae00b200b700bc00c100c600cb00d000d500db00e000e500eb00f000f600fb01010107010d01130119011f0125012b01320138013e0145014c0152015901600167016e0175017c0183018b0192019a01a101a901b101b901c101c901d101d901e101e901f201fa0203020c0214021d0226022f02380241024b0254025d02670271027a0284028e029802a202ac02b602c102cb02d502e002eb02f50300030b03160321032d03380343034f035a03660372037e038a039603a203ae03ba03c703d303e003ec03f9040604130420042d043b0448045504630471047e048c049a04a804b604c404d304e104f004fe050d051c052b053a05490558056705770586059605a605b505c505d505e505f6060606160627063706480659066a067b068c069d06af06c006d106e306f507070719072b073d074f076107740786079907ac07bf07d207e507f8080b081f08320846085a086e0882089608aa08be08d208e708fb09100925093a094f09640979098f09a409ba09cf09e509fb0a110a270a3d0a540a6a0a810a980aae0ac50adc0af30b0b0b220b390b510b690b800b980bb00bc80be10bf90c120c2a0c430c5c0c750c8e0ca70cc00cd90cf30d0d0d260d400d5a0d740d8e0da90dc30dde0df80e130e2e0e490e640e7f0e9b0eb60ed20eee0f090f250f410f5e0f7a0f960fb30fcf0fec1009102610431061107e109b10b910d710f511131131114f116d118c11aa11c911e81207122612451264128412a312c312e31303132313431363138313a413c513e5140614271449146a148b14ad14ce14f01512153415561578159b15bd15e0160316261649166c168f16b216d616fa171d17411765178917ae17d217f7181b18401865188a18af18d518fa19201945196b199119b719dd1a041a2a1a511a771a9e1ac51aec1b141b3b1b631b8a1bb21bda1c021c2a1c521c7b1ca31ccc1cf51d1e1d471d701d991dc31dec1e161e401e6a1e941ebe1ee91f131f3e1f691f941fbf1fea20152041206c209820c420f0211c2148217521a121ce21fb22272255228222af22dd230a23382366239423c223f0241f244d247c24ab24da250925382568259725c725f726272657268726b726e827182749277a27ab27dc280d283f287128a228d429062938296b299d29d02a022a352a682a9b2acf2b022b362b692b9d2bd12c052c392c6e2ca22cd72d0c2d412d762dab2de12e162e4c2e822eb72eee2f242f5a2f912fc72ffe3035306c30a430db3112314a318231ba31f2322a3263329b32d4330d3346337f33b833f1342b3465349e34d83513354d358735c235fd3637367236ae36e937243760379c37d738143850388c38c839053942397f39bc39f93a363a743ab23aef3b2d3b6b3baa3be83c273c653ca43ce33d223d613da13de03e203e603ea03ee03f213f613fa23fe24023406440a640e74129416a41ac41ee4230427242b542f7433a437d43c044034447448a44ce45124555459a45de4622466746ab46f04735477b47c04805484b489148d7491d496349a949f04a374a7d4ac44b0c4b534b9a4be24c2a4c724cba4d024d4a4d934ddc4e254e6e4eb74f004f494f934fdd5027507150bb51065150519b51e65231527c52c75313535f53aa53f65442548f54db5528557555c2560f565c56a956f75744579257e0582f587d58cb591a596959b85a075a565aa65af55b455b955be55c355c865cd65d275d785dc95e1a5e6c5ebd5f0f5f615fb36005605760aa60fc614f61a261f56249629c62f06343639763eb6440649464e9653d659265e7663d669266e8673d679367e9683f689668ec6943699a69f16a486a9f6af76b4f6ba76bff6c576caf6d086d606db96e126e6b6ec46f1e6f786fd1702b708670e0713a719571f0724b72a67301735d73b87414747074cc7528758575e1763e769b76f8775677b37811786e78cc792a798979e77a467aa57b047b637bc27c217c817ce17d417da17e017e627ec27f237f847fe5804780a8810a816b81cd8230829282f4835783ba841d848084e3854785ab860e867286d7873b879f8804886988ce8933899989fe8a648aca8b308b968bfc8c638cca8d318d988dff8e668ece8f368f9e9006906e90d6913f91a89211927a92e3934d93b69420948a94f4955f95c99634969f970a977597e0984c98b89924999099fc9a689ad59b429baf9c1c9c899cf79d649dd29e409eae9f1d9f8b9ffaa069a0d8a147a1b6a226a296a306a376a3e6a456a4c7a538a5a9a61aa68ba6fda76ea7e0a852a8c4a937a9a9aa1caa8fab02ab75abe9ac5cacd0ad44adb8ae2daea1af16af8bb000b075b0eab160b1d6b24bb2c2b338b3aeb425b49cb513b58ab601b679b6f0b768b7e0b859b8d1b94ab9c2ba3bbab5bb2ebba7bc21bc9bbd15bd8fbe0abe84beffbf7abff5c070c0ecc167c1e3c25fc2dbc358c3d4c451c4cec54bc5c8c646c6c3c741c7bfc83dc8bcc93ac9b9ca38cab7cb36cbb6cc35ccb5cd35cdb5ce36ceb6cf37cfb8d039d0bad13cd1bed23fd2c1d344d3c6d449d4cbd54ed5d1d655d6d8d75cd7e0d864d8e8d96cd9f1da76dafbdb80dc05dc8add10dd96de1cdea2df29dfafe036e0bde144e1cce253e2dbe363e3ebe473e4fce584e60de696e71fe7a9e832e8bce946e9d0ea5beae5eb70ebfbec86ed11ed9cee28eeb4ef40efccf058f0e5f172f1fff28cf319f3a7f434f4c2f550f5def66df6fbf78af819f8a8f938f9c7fa57fae7fb77fc07fc98fd29fdbafe4bfedcff6dffffffdb0084000203030304030405050406060606060808070708080d090a090a090d130c0e0c0c0e0c131114110f1114111e181515181e231d1c1d232a25252a35323545455c010203030304030405050406060606060808070708080d090a090a090d130c0e0c0c0e0c131114110f1114111e181515181e231d1c1d232a25252a35323545455cffc200110801aa028003012200021101031101ffc4001d000002020301010100000000000000000002030104000507060809ffda0008010100000000fbe1084000661cce64088880e44040c0880002d4b5296b5a416b588c0c0c6664c99990c664c91b5af7d8b365e7eeeb26bac0660a6732060457031022223002b05a96a52d6a50296002100339324464653104524c639f66cd9b5619ec6ba10901c9c92cc1818101808181018111529695a14a5294b5802c4632670898c6199896614b1ae7d9b766e58b3e96bd7424070b0a6206220446060444444416a5252a4292a5296a05804414cc9b1ad6b0e732724d8e759b36ae5ab76b79590852c60a4a646044602060444444416b4a128521494ad4a52d6b18992226b9cc69914c914935ceb366d5dbd72e5f4a12958e6494e40884088c0c00c0400a949af592852129529495a42308da4c639cc7119c99491b1efb166e5db9b0bce4a12958e44ccc440888c0c0c0888842d49af56bd74a1094a94a4ad22324c731ad735ac61b0c99246c758b166edfd85fbc084256b188999c811118180181111110422ad3ad5935d2a52d4a52804648d8d73dad6b58f33611c935efb36eeded8ecb65af4a52b0118999c81108110811818111522a55a752b57ae95ad6a502e2220a58d739ce739cd6b186786d73ed5bbdb0d86d363a75294a1188989c18101180818018180557a74a8d3ab5ebad62a580c4088cc939b61cf7b6c35ce619111d8b166e5fd86cb67b1d1294b508c6646608808c0840c040808aab53a1428d4ac9582d518303010386c7d87587d8b0f7b9a7246d73ed5ebf7f65b5d979b5296011119910202223003022230b15d5a5aed76be9555a56b892c81110c9c63ac59b565efb561c66446c7bed5dbfb0d9ed769e592b0584446640c08884008c0400808d7af475badd5d1aeaa7c5be6de8fdeb7fba640604649bacdbb762cd8b361ac6199b1d62cdebfb0da6df69e45290080cccc8811101010811100115f34d4742d6eab53af56dfcdf38d06aa9def6feedd1103126fb572d5ab36ac587358c361bdd6eedfd8ed76fb6f18952c44633232045622220230b11004fc5ff001efeb5eb34fa8a2eb7ce3c9f9bf34d0d8f43e8361718246eb976e5ab76acbdee699b0db62d5dbdb3dbee371e154a00118cc8c18800010101110004f0cfc3cb1fb2bd0f51cb7cafd207e2bc7f996f83f1acf59e93a47a208892b176fdeb96acd97bdcd611b5d62d5cbbb9daedf77e054901118c8c88800001158808802f97fe23f309fa9beecf99b53f4c773ddbbca780f087738c6b7d4fa9fa0f5703876afec2e5bb566cd973da666d758b76ef6e369b9ddf3f5ad602391119020020000210020afce4f992b717d0afe94d7790faabd5f51eb7ea7ca715f1de9f8dea7df76feb3e146196f617eedab566d58b0f630cd8fb16addfdaee373bde7ab582862062330004004404004055f12fccfe0b9833ea047c6d53a076cf55d6fe86f75e63e55e8ba4e40aeaff0055788d341dfd95fb76ed59b365ce6b0d8c7d9b372fed371bade73e58000040e0612c04040456222103c57e11f0de8b71f65f3be7df106cbbff0094abdbfe9ce8be5f93279568b77f43f68e1c0fd8ec6edcb766cd87d86b58c6b1d66cdbd86d371badef3d00110111815b5602020020211190bfcf59e35f5c750e2bacf17ceb8e3891f4cfd53ef7c6f89b3e6f86f61faef8469adecb6172e5ab365d61cc6b58d6bac5ab5b0da6e379bde7aa18111118119000100011081c2ce67c6fc4f31faf3db7ce1cefac7cd56b93f3ddc5bfa87eb3f47e297edbe66f2bf592798dfda5eb76ad3ec586b5ad6b1ae758b372f6d36fbcdf73e0111880110c80110001588c4496726f9b74de57a67d53f9fbcdba1f48e69b7e2bcd3d05cfb33e91778fe976be13eedd9f886cf6376d59b361cd6b58d6b58e7becdcbdb3dbef77de01703023100382b1011001011c928f99b805ed5f2afd64e11c8b451cebd8ec7e57d06eae7e83f57d06cfd8fce9a1fa2f8e6cefdbb361ce7b18c731cd639d62cdbbdb2dbefb7fe0d60383022310020202200231984bf9dbe4ae83a5f9bff5a361c479a7a6f2dca7be78df8a777b0ea9f786dbc9f66f2bf2bfd11e036372d3ded738cdad6b98d6bdd66dddd9ee77bbff000cb11881181181010111011088995fce7f01fd43e33c8fbffd02e33cad3ef7e2dec7dd7e2ce35ea7c37e96f52d27a8e87f0f769d3dfb361ce631e6c27398d6b1d62c5abfb2dbfa0dff008858c40c08c40088808088880c4e0f8af8afb7717f35c87f6579ef22f0fdc7f3f6ff00db9e37f387d3693befdacbb5d4fe22eb4db8f7358c6b4cd8d6b1ac739f62dded96e37be83c5ae222046204440444004200463057e4bcbf2be29f3afebdec793f2de8ff0039729fa6fe91fcd1f09ab5fe9d6c43a57c3dde6f586b4986e336318d6b18e6bec5bbdb2dc6f7d078e08888818180101110001111018865aa3cebe37e7ddd7ecfe79c777343e43eb1f767c89f2337847eaa751d6f49e09e9adb0c8cdac699b18d6318d6bacdbbdb3dbef3d0f91018c1c8818100111000108110811dc8687e31e79cebf59bc37cf173adfe70f41fbb74ff009b9e97e6efbf7e95d26ffc56c5ec3223631a66c6318c631aeb36efecb71bedff0093088c8881c858884400000c088808ec763a5e29f27f0bfd78d7f29f25d4fe0cddfd55d33f363df7cd3defea0df6b6ed86999119b5864c61b8c9ac758b97f67b8de6fbcc44644640c4008880e02c046004441fb8ade1be1af31f4e7d2bcbbc1fa2f9d3c47d21dcbe10e87c73d0fa6eadb3d931864444c61911b0dac3363ac5bbfb4dbef77de7462262307060200022160001001002cd9796f92395f4dfb879f786a5e3be72fa63bd7c99bbe59b8ed9b2639873304c619ccb0d8c33631cfb7b0d9ee377bed08c4e4664440888000c00ad6b058404359ade03f3f3fef6a5e1bc8bfe33faa3b9fce0ef9e6a7d17d02e583181c635a7338c33611b1ad7dbbdb3dc6ef7da68cccc8c88c11810001105ad4b4a979836e9f1ef9b9bf51fbcf0fcb3d37c6ff58f53e137f8e73efa8bd96c18201846e6114e11199b0dadb166f6cf6fbcdf6ab232733232060600045622a52d694a885da5f3df2e2bb676ff0031cc74fc9fbc7a9e2fe87c2fbdddde762d6046c6b0a670888c986d73ad5dd96df79bda5198593199102102020100b52c54b5ad2a679df9db5dd8fd96786e6dd2d8fe3de817ed2d4c0a83258c694e4c9611999b1afb37765b6ddefd399992432383022222b0185ad400a52948d4798e45ec3d7c6b7c5d0ef7e2f53cdf79ec6d402c0724986c9c8999293232735b66eec76dbadfe6664cce6640c0c0882c06014a5ad600a46838dee3dcac68731a3f48f8ef19c5bbbed454a11c296114e664ce14c91935afb17761b5dd6fac664964e66644040082c02014a0582d6a521356bd6453f9efc5fd6fcfe97ba314a0233264b272326624a0a488daeb376fed773bed8e4cccce4e440c0ac00440014b05ad60a52ebd752d55fcab6e71fe8fb685a9603119839111259993399244d7d9b7b0daee37bbbc9c299c9c8c18582d61102b5a4515d202b0529600a4a412a58ad4a0108811181c9cccc9cc829263ecdbbfb4dcef3d1e14cccce666408ad6b1081152842bd4400802d600a52816a5ac140b5ac00020223273333304e64dd62ddfdaee775eae4b0a4b0b2632200160002000b58250952d6b5829695a940a052814b5ad60002399999231825844db16f61b4dbef3d994c91164cc64c440ad6b10180105ad2a4a92a52d695a54a5ad6a5296a5a96b0580e66644c440e64935f6efed36fbaf7f25327325399902220b15c088c08029294d7aea502d6a525495a56a5296a5ac162119119910231186c7dbbdb4db6eba4c91149494e6644008800088808088a975ebd5ac952c56a5a9495296a5294a5ad621030311982231864fb77b67b6dbf5422392222c9cc18810110100000000105a2b55a95d4a58296b4a94a5294b5296b588c0888944044649bacded96d769d8c8e488e4a7333206044216b15802c01602a457a952b5752d4b05a94b5a5695296b5808c40c408886449b2cddd8ecf69dc48a4c88a4b33232046040416b005ad6a52c0155ead5ad5d0a52d6b52812a5292b050880c44080000e6136c5bbfb1d97d08444444525391223102220b05802d4b52949005d7ad5ab564252a05a94b5252a5029610032202b58864cb1d6ae5fd87d2a644464453399902302230b5ad4b052d4a5254009af5ead6af5d695a94b525295a5695ac007204414103846d7dbb977eaa223223939c2c888118110152d6a52d6a5212b582915ebd5ae84a92b4a9494a1695296b5282220170a1199326d8b567ec123961114b33330604717000b05a5695a975d4a5ad68af5eb564210b5292a4a50baeb052d2000180b058e2e598c7d867fffc4001d010002030101010101000000000000000002030104050600070809ffda0008010210000000fe7e56ac11022002301e111f7bde3261b1ac6b186d63ded63b0eb5758c40800008440c48c499935cd36b586d635ae36e2d74287d0b1001801111f41788a5ee635ac32731ad6b1f875d2b088111018058c008c111b1ef6b4cccd8c6b98fb3cfa5202222020022220201112c7597b5a66d36935adb3779752844456020202100b4a005aeb366cbda66c630d8d75bd0e496b58888ac404406de62ab5aed71f06b32edcb2d631a64c631f77578b52c4600056202163f497e63a5694ed9d39e573b4edb98e6b08cdb634763834ac4205620b105fe83ec391c7c7c9c8e73b2b977e4f62fb98d7308da76b4b6b804ac2005400000bfb15fe3abfd73e6f8b527bce573f8ed2735ce69b18cb7a5b9f3d5ad7010a5ac0155faaa5a1c6f57d7ed7cfa86969238a7bdad7b58d36dbd2dff009e2d6b0115ad4b5aaafd4be6df424d9e4bb4d0f9d55fa8f034e939ce7b58c636e696ff00cf9402b0582d6952abfe8efcf3dc73785d95cdda1c17456b920b0f6bdcc69bade9743f3d1100050029294abe97f3fdcab81db1edd6e573ba4e26cbec39ee630dd6f4fa0f9f408802d6b5a5294b3a4e5ba8e7fa4a1f41e49ff3abebb0e7b5ee630db6f4ba1e007c300b58294b4a6af498d7032b7fa9e5ec7ce6e6bd87398e6b4d8cb7a5d07071e880052d6094250b0aba3cf7d0b3a19ce5db0d7318c73186cb5a5bdc447a220016b5a6b555d5a541b4bb35db653992738d8d6318767437b8d89f44082d40a522b232b0b43377f4621ce236b0d8c6b0cec5edce53d3130020905a52a53b293cef4372dd3630d8c23634d86762e6bf3de999800528575d280150389f5208cd9246c699349f6f531cbc53e805281694d5488c44fbd05265266d33361b6ce8509322f48296b105a149488c40c4c9491b1a66466d7ddac4c23f7a014b1052c1355111e81f4c949934ccc8dafb40c339f4c400296b5296baa801f7bd265246c6199131d64cd8473ef08429295214b5a52bf4c11cf88dac232263ec1b1846530222b4d7526ba454a01f7a4ca0d8c2264936c5bfffc4001b01000301010101010000000000000000000001020304050607ffda0008010310000000fd7b574c4d8c7a831824e6453094c28989cfb75a18ac2dd53060d27124cc2995312a33eed2d80d8e9db01898a65440a20512b3cbd2ba6c96da6eed8369930b3842c414cce78fa7a0e9ca74c7554c74316719c0a7241331963ea5b6c1b6c1e94dddb14c6310b38905046187aba503614c6ea77ad7a38f6d718c329c66049299c39bd8ab60d858c5f23f6d75ebcf2f2e6df3e78c4cc8111cfcbee154c6daaa1fcdf375c7adebf4f4f9d9f2fa18e3842840a32c397dd63745b45baf339fd6e9f89faeef73e37ab87473639a99099c70e4f79b065d50eb53a57a9c9e7727a95cca34e7cb34a02631c38fde298c75a0ef67f41f3f53e97959f7ebe07b7c1119ca9444e18727bc8a28669557b795f65e3f574f371e17e871e46319ca946738e1c7efa063a66b55a69ea9c1e8f0cf16bd5b78fb6339252944e3871fbcd031d3bbad3ab2fa2f0fd2f3bb3e7bd2af4bcce48ce11094ce3cfc7eeb49b63b7a55ee7b1cf44f91e8aeae3e28ce11094ac79f8fda006e8775abd3a7bbbfcbebf3f9fb31ae4ca62119866638727b0001543bd2efafafd4e17c78ede5502ce02110b2c393d668603a6eab5d7d2ede4de705e7cc939c8a510b3c793d36086c1bb756faeae3b3c6d929894280513872fa039453a4ea9d5e854b184e72010850b0e7ec4e10ca2ae9ddd50d313ce4014a142c70e8728001ddb76ec632a526826414ac71d8901301d68ddd500ea440225042cb2a0490530ad5d51754324901100a5678d1020074eb57543b2d21008943999cf2a990000bad69d8ec000044a42539e1ffc40026100001040202020300030101000000000001000203040511064010301220500713601415ffda00080101000102013e0ff80d7db4100001ad7f82d2d6bc0000410006b451fddd6b5afb8400000000051ff09ad69041001000007c1f56bf387a35e7482080000000451ef9f41ef801041001003f08a3e0f93f823c0400000007e0145147c9e90e8682082080000ef945145147cefde3d5ad7d4208200068007e01451451451e9043c843d8104100d4d4001df28a28a28a3f4defd83ea3c05af404104104d0d4dfc028a7228a27cefdc1041043c8f504104104d4d43be51453939144f87bb2997767e94cdb0cb41dea0820820821ea08208209a1a1a0f7b3595c367ca7271712508a77481ce73be6c9e1b0c3e90820820821ea08208209a9a9a3ba57f21f21e03c8497171712619257ca64aafae67fecf9b24ab75d688dfd4208208208781e90820826a6a6a68ee15c9392e4f258f6f1dc9b9ee7bf34ec8d4aafad357914af71b18ef989229639f1b608fa8410410410410f40f0104134353537bb9ccd666dff00c504bc4f910e436790c78fc53db7196a477f44d4a4858f9aad9aad2cb30d98cfd4208208208791f70820826a6a6a6a6f779e331f84b74e5ab28a4458b39f6f2ac6e720b9573705d5629d8ae6cfca789858b1935dadf40820820820821e90820826a6a6a6f779e4353317677b3ff331dc3ef70e929bf1d56ad4ba24a96e95e22c57b22265a85f131f5a4c6cf660f01041041043c0f504104d4d4d4c4deef22c71c64385928719a73c4f766b11671f4e26098457286429dbd4f5e489f01a7355a6fa1264ab7808208208208781e81e020826a6a626f74aca9af067a2e098eb2a74d9afc56a07c91db7289f8cc952b7ab15e364905bc76a84d45f6a241001041040781e808208209a9a989bddcdc915395f926f0d96fc56dbfd90365af243771b1bd46ec3e4ebcce6cf056221cd50a8fc34f9a89000041043da104104d4d4d4ceee624a19a9dd607f1fddcb1b9926d6b395c8888ba0c963e2704d7617290bdec91b515ca1f0c64b98600d0001a007ac780820826a6a62677792d6a58d9da5b8ebd76bbe858abfd3c2c4915774f532946373556b542c853478a7501ca29507597000003c843d8104104d4d4c4cee159bb157293862e4b071ec9db6580f66319c96ac32c032541d1313e3e2991aef782ab3b9356a29ce00003de104104135313133b8566eb56a4e89642b7f14e4278ecc134759d9eadbc4d8743c971d1162b1263ac6e56d09ac36a27bc000043a0104135353133bb6e19b19fd36e099bc7ec95659662f8d774f1549a93b3340471ac933855d0552f161390007d47b0780826a6a626774b26a1ff264ea91c821c4de9996138635fc96b3571fb32c1c8ea31648f14b75dea34c3fd8001ae884104135353133bad3a732f5591b95affc71932ad898639fcb2b30e26481732a4c13c50bb1af2c2848cae075020826a6a626779a8b646e62bb9bc466f8db8edba18e686250ac64dc82ac0d11e423e376039ca6958d1d31e0209a9a9a9899de8fc4adcf550b29163ed5b1622d51766a0aa30324ca38595f3f5b1124161864900eb04135353133bcc20c8ac3278ac47c22c4cd9d8e6537736af8e5875f1bb0d78f92d5a90c745f5236758209a9a9a989bdf6a729166593b30d3953c52358b9743893493166a2a6de526a2c789481ad75020826a6a62677da4b9eb3b0eaa0ab3caa60e3719c79cc511cf0a0b953eb6531f6da82d75420826a6a6267e004f59825541849a612366b3049c623736bbb3ca8b739462e2752ab401d608209a9a9899dbd6bcb14d62dc76e3aaa91dca2d411ae3352765539a540011c61a0760209a9a9899f81b70945e8e8576b2bcd3a955d5469ce299c9a63eac0d66bb2104d4d4d4cfc199f05fbada15f4ac4d2dbc2b7e338a4676c6c6b3b4104135353533f00ab30dab3056f8eb52b65556d036154759af041aecec208209a9a99f827c68b7443865ede26381f9e9714cd783f4d7582082696a67e11f3ad16dac74150c791c356afad696b5d80826a6a6a676ca2b7bdfa74b5ad7d75d60820826a6a674f5f4d79208d7bb5dd0426a696a69e86b5f7d78d6b5ad696bde7ae104d4d4d2d3d9d6b5ad6b5ad7db5f82104d2d4d4d3ded783f94084d4d2d3f8041447e40413534b4fe0905107f136820426a6969fc128a28828fe204102d20b4fe214410477b7e760820820fe31451f07f04104105a7f1ca28f737bdef7bd820821df8a7c9f07bbb5b5bd821df2ef1f07ec51451451f07e87c9e81f07e83c0f03c7ffc4004110000103020305040607070305000000000100020304111221310513224151106171811432425091b10623526062a1c1152025436372d12482e133407390a0ffda0008010100033f01ff00df39010a4031095d881b08d85da782dab52e60836754dda732e71683e36f92fa4c278f7f1c5bb3ae179bb7f3520f6ae81d42074fb8236651fa43a9e495a1c038306601e6a836b4523a9c9e0c18ae342f17b797ef1280172b259f614e4e0754d36cd5fee07ecfd97e8d1496a8a9047f6c7ccf9e89d455bb87ff00d198f11e8ee47f7862eabbd35c48c4e4e766d99c3c555b790778156759d707a1eccfb30db16614443481c27daef447bf687635217c8e065734eea2e6eef3dcab369d6bea277e391fcff41dc10c7aaf4dd971389bbd9c0ff11db478cb5b89e474192aaa8a96c31301b8d2ff0035bb880d5dcca3d1107456d4594a08c362a395969580a95ad2ea7bc9f82f9f9275ec7223aab141ca48c58660ea3aaf4812666ddfab48441b1f7dd36caa23349c4e39471f37bbfc7555db5abe69a73771e9a0b6807729d8039b9a3be2399f984da0a9937b88c7237880cc8216c77471bc56c785e6c33e7dfd1566d095cc87822be406ae1d5c7f455d705f58d630f46aa2a56608f371f59c732535a066a376857012062cb45be8f118cb0f452026c158ab286ac662cee4f0a5a77e17f93b9145a87083a93609b4f5033389c3d5ebdebd2226bd86e08cbdf72cdb51ad6dce085b66f2cf3254e0895c40cfe216e9c6da266fb10d559d96574ebbf138869703d7c8230b63c0d6b00e4e3994cc1f58e39656463737045a77a8b68d36a5ae68e265d55444e77034cd02f0c3af7a6bcd9070d131e3bd3a32aa1878589b51138399e20a31badc916b935d85e07105826009e03cba2fe637cfdf4f6ee66863facc0ec446a4051c9471d86800ba74a72c9301e2933e813a724ee9c1b6d5dfe144191c8e6e136be7994c93116574a1c47b4010ab28ab1d4f551e787c438750a0c57670f7725030b5d1d798641c9f19b7c5b7556496c915ededb736951b9e0f308b48b39091a2e73408c935ed20855906d1c0e8bea9dea48391e8501c4992b5ee68cf9856f0e48b0ae11cd09620c76b6fc918a6737e1e1ef97d45336460bba2bf0f50a9cc4f34d0038bd6c1d7c155cf2966eb74cb71389bbbcbc552d28223606f7f34eabda4f941faa8059df889d022d68b2e2516d2a4c3a48dce37743fe15551bf0ca323a38660a619334d6b3259e49cc70bfc5371005c2e45d62b7120e09ae1985ba7d8faa9d9399a81a29b7a5f9588b3d9fa8ef08b1f63e5de16172b4ac3d16f20c63568bf97be4017515557c9253b0b1dc8b05afde56d3fac13c995b22352a58e3d322847f46e37db8e67ba43f208b715d0bab77adc4425310c05d777777a134778c817191b2da54e2cfb3ff10c90932230bba2ba74328781cade49ae193bfe1626841e1070b108b1f84e9c90bdc04648496ea330ac56884b4fe0b7551233a1cbdf0e146636fad2f0f80e69b4f059bd333cca37424610740107ec48c5f3639cd29a5a6eade0ace4ca8a72d70b8d0a75054be137c1ab7c135c1070b8d468539a703f51d8f8de1cd362848467623d60ae3541c15c2b9c2ee49a9d055620381ff3585e17161eaad331ff00685be1ef88585ae94d991b4b8946bdd52fc9b183858ce7e255dc55d8ef056aada148e3c9b2b3e456ee07396d1a82f6c34c4069f58f35b58c988bc0cd56ecea563835a711e271b9b5bc136bf655356b07b01de47559590735122e0710d0abe475ec922789233673532a22691e0474281ecc2ec4b781a7551d552c8c3e47a14e8e5208b106c47822246957a563ba11ef875432605ee6b047996eaa1a625913ce0be206f7c570ac755c057ecdfa4db3a626cc749ba7f8499212c2e694d6476b5d004951cb1be19070bda5bf14f3b2aa28a71c504af611f84a7413c919d58eb20efd507351864de0197b5fe55c763a86adb2fb0eca41faf926bdadcef92c43b3773602835f38b38dce84e68435cd900ca517f30b20b1ecd3dd6f7c4cc8642c03222f923bc10888e440d55c5ec890e051f457b86ac21c0f826ed1d8947517cdf10c5fdc322ac0957be4b340566f79e1c2eefef5bbaa8e60329058f8858241d39a6c8c1cd07c6ecb927413ba33cbe5d81f19088c54af3c51e6cef6ff00c2bb55c22d78703a205c1dd42deecd2ee71b83bcb42b8d7f0e77be2a5f4351bb36e6a5fda384bec6e08f24e315f15d10e284d4f234fb4d211f44aaa179e289d89be1a1589a803a2175827695bfd97211ab2cf1e4ae15f84f241ec46322603d5363e0565d8fa2ac8aa59ec3ae7bc73099246c734dc1008f03d99ab8c3d135f4d231da39a41567aff48d1d4fbe09a5918de6d586a18e68cc5b3f040c6acfcd62165fb33e9847c992bac7c1f97cd5da85bb2c509296c7c0a314d2c7f61c422c91ae09b240109a0736d938109d148e63b569b1f2ec06145fb38464e70bb079725762042b5478a792f0e16e8b755d344394842c983ec8f7c620a37df245a2d65c25dd1668c72d3d4372c2eb1f342b366d34e3f991b49f1e6ae85dede6068b3576bdab73b41b20d256fe6d59ac4c2c3ec9fc90741f92dc6d2c56ca417f319765a8dcefb362b71b5a48efc328fcc66102c56c95a66a76f5e0ade7d22ade2b8df9b0f0f7ce7d80858e275ba22d710b7f45237b96f767494ce3c50bae3fb5dff3d962b3bac3378ac7b377806713c3bc8e4568b7754cfc592c51a06984a3f9727e4ecbb31c0f69e60a7415f13c7b384fc117b1a6fae6b2bae20b8415009e491b1b439e4dc8199f7d5c2cd669d155bf2cb557610850fd2a119c9b36268f176616592c9543640191837399274582404bae854d0cb19f69a5a88bb4ead363e48dae350b7b4ec7f50109a82a59f6a336f119abb564b06d068ee58a91a0eadc970a3c82c1077fbf8494dbc0336acd49155b278f2730870f229955470ccdd246077c538682e85eeb357610bd1f6d54b7938e31fee5708ee1cde8562162b04b2b3ecbc8f82b809cdda7177b53a10d3d722b13755775d6f5fdc3df79f6e38a461e61189e4742a373e2c5eabb85de0ec93db473d1bfd7a6908ff6b95c219f6617d9619e8e71ed0730fcc2bb422d9de3910ae16ef6ad637fa97f8e685821fb4a9f2fe57ea86ec2da4f71104cccf4c5c9490b181d36271d40d1587bf1d8c1ebdb6ab7058a1216eb6a524fecd4c7ba93fbb91576ae6564b0baeb7db0a47f389cd7fe763f357685866677ae156dab31ead6157c080dad4c3fa03e68168403c9e816f25bf4f7edbb6f85caed21175339a3563eedf1d4213534727db682afe3d965e91b22ae3fb50bc7e4b146d56c07bd5da17f121df137e6bd544edf03a42c51c6ec2e42560005b2b9f7fe5d8d10b2ff006c0f8ac3291dead24817d4ba33ec9b8f028ea05ca7d8dd06cc18e6917d1dc89e8af1cc3f0fcc23ba6ae05f56d5fc422ffc43e6b44daada9519919345c72b04edf31c6b5f83da1845cf9a8e08c35832f9fbff0054d6ea0e7dc83a278567870e6bebc8fc375ba903b97340b7b18f0e0e170754d829e5ccd9b19d4f4088a7612392b310dcb55eb99fd8168b7b552bfabcfdc1b269b15926f10be87e681a82ff00c16fcfb006e13e489d16a8ba9e660d5cdb7c7242081a3b96457d5045f5eeee0d0b754ee3ced61e6acdfb8533627eeda1ce02ed1a5fb941541e18ee26faec3ab55aae7c866c61bf5e4b0c57235ed9e31c2011d0a26338a1734f76614b36f9f2e1c58ecd68e4d1a5fbd64b55f55e6562a899ff00d445e1a390280fb8464664ec2e1ea9ef5494d2b649e077a48c9a636925fe6351e2a5a876fa68cc7703eaceb975fdcbb564428a8e58cb8e523833e3cd648679ab53dda2fad96dc95e0450b63cef89eecbf24228dad1cbee21ebfbde8efb5b894b5b3191f9b6327e2b82dd16e766554ac20482321a4f53927b68e10ed43062f1fb9947522d340d7f88504113638a30c6374011b646ddeabab031876861607b5d6dd0bddba2dcc7871979d4b8f3f87ff0399ffdcfffc40028100101010002020202020203010101000001001110213141516120718191a1b130c1d1f0e1f1ffda0008010100013f101242664b2cb22cb3978ee64ea67fe073866678499999996599de13bb38eb8ebf1c820822cb2cb386164104106c41c09c01e29249249ca7e5925965925ea7fe06c99e5e1192666665978596d96d97f2208b2ce32cb226442641d72021c810fac21324d9c659659c67e392596596719659259d5925924cccccccb2cb2cb2cb2dbc6db1f89041d410726fe6c596590410410eff0030011092492cb2cb2cb38cb2cb2c6cb2cb2c2492c64b36c92c926666666596596659659659596de0e3e3832208820e339cb2ce043a4108700e04e5242492cb2c820b2ce196492592709ca593c3ca4ccccccb2cb32cb2cb2cb2cb6db6dbc91044222ce32c8386410440842d1fc685210924b2ce32c8e726ce1b3878ce524924b2667783332cb2cb2965965965b6db6d88e0888e020bab20b3bb2ceec8208208421c5e410eee7799fdc3c4cc932596719c165964d933649671925927725924924cf0f29652cb29659659659967918861888888882c82082cb208208411fcaab64926492cb2cb2cb2cb2cb2ce3249e538664e1249f3c14e52cb2965965965966f7672430c31c0888882088f3c659077041104211e2f171249249259659659c65964967e193c6496496596772753c8a5b294b2cc59659659e3eacb39223811111041041109967504104210fc6889933924925965965965967e0d9c336729c77c33397b70739c994b3e259659e5fccb65c08e4223e2082cb2c82082108de284388a49b2492cb38cfc33f04e338786784e13849fc1a9ca52cb69319bf83e7879d8619430c4420844082cb2c82082108c63c02124f0f196739659c3c65927193259c270fe0f0729ce495d96599afc3779e2dfcd9f3c9c98e423cf00820b22c82082108f130f108cc933c649659659659249649c24f19c670d92593f911f12cb24c3c5bcf68077f461fcce1bbc00ceba83bf737cfdac449be15a9f19637f93bbfdc047eadb65f36fbb6df36db6c43f9005e11ea220820eec820842318fe20126492cb2cb2cb24e12c9b2c99999e1249999bbe0e95addfe87aee44dce387b13db847ec9ca0e40d00357c5e4431ab3c41a4ff730e6afdedf22c1dd866cc9387e2513d36f1bc0db0c32fc4070208823808208421ce3c43892492492cb2cfc7384e32492ce12c999926780a10b73cf83ebf47f31173adf658aff0087ebf1d5c6ec835e8fa9d1dc48c34eba663407a1a377417f9bfa6dafa908ff009b0fb80794a3d36b1ff60bad67d0ec3e0fc6fab117c3e1386db6f76c789772ebf01d3b8410820820e0208842318461c4cc9dd92493c659659659249649c33cb364cca677e69d875f417cbfc13a1c0abc01d02747a0bbbe88f83e61c4c9d9de1d2fece0f2467d0c5ff7190d8ca359f6bd07b6563583ef7ff3e2eceea4ce73e1206ff904aa705d173fa8e9fcf0f69fa4b22831d03f99c1cfeec1028c4189fb2606201b168835f03d9fbf8849e7601f4192e0ecff00ed38dbddb0f77973987e200c4444410821ca40703e23249249659659659659ca59333cb33270c910ba123983737d0f2bd17617e0e71f00fafc7f338517b03e61b0c073ebb320d7d10f91887bcff50f5ebdc2635079c7dc0420ceb13a3d61f4226530445d5f5b81796e7b5abe57fd1e2567abf70b27da424f65f8802b7ede6ec843c7dc8da3fa899e00f2434eabe41ffa7d4c4877c5e0fafbfabdbcd3b8403dbff8593e9947a0f6bf50186c63cff1f25dededbdf1ef9cf20e0470082082082108c61e2f0847a8c924927e39ce4cf09325964fe0cc924d06698e8a41f59e7f574981879f577f4d8801a50fab68b16267a48b55aedfcfb249ee0bcb0e90f3dcdc72a7667da1eed2ec0713074f27c8c09b000dcf478f11c4c113b0bef7d8fa602528d7927dfddd22af7d3af9fb9b6c53c9223d37dcd70cf913debaff00761d90f433ebc3f6bebe194055b829d9f4fdda5f8f13431e9d7e3d96909880e856667d3e27fbff00d99e0fc38e4108444441111f803c47647b8c9325849659659c6596492492596496719649649246eafd1c41fd6f5691ff00780bb905beff00fcbcbc6f45aafd06c6418d433afaf276c3543a00df83c0c9b6e0fd18701cfd58f4ec1f09d09ec97d64fb797fe5e0e1da9fa1c23f65aa07bb87e4dc4fe49ee233e7af378b2fbefb82b2c63fb2d52830c09e9e8f7e8fd7d3652fe5f9fdc7c51d7ad3e7ff001949d3af27cfe9fbb32b83d313dfe1fcb2b6216efb9eac797f2bf018f88c2108e04444441041c0421e23c9eb26c925924965964931e6492cb2492492ce12492c92c9f39d63cbf6867b33621da508d3d37a67f56df769be8f3d30ededf11f03c29ed9e55f33731c1e87bfc19b620703bdfbb0ec3d36838cf9bee1fb7b22fad93c45f0fcfd3dc0bc8fbe923d8073b6f3163f2468f01f4d3f98ec0440f9ceb43e2001e9ff00de6777cfdcf01671f6fa7e1fbb3e03f409f1683e1afd3a7ec3f99b77b9a8f09e12211f1313ede7e46031dc8fbf638c8c6308421083804444411c08438fa5e7c0f8990b384b24b2cb2cb1d24b2492ce12cb2c92cb2c82cb413806afc04ebb39b0cfa0f3bed8c0fb234eeff5907c61e6eebd7cca2226fbf387f44701f398076679d8e88e9af77aa6be09d98c0f3dfe3fee76f3400ff243408f008fe4ff00b84d41e5588009458fb3a87c7889ba6668f95f71117b9fe07a9081fdcc97b3d9f5f527c87b33cdedf317e7d87d3fee19a75ddf27bf119175e8feaf861ff83d964788c210eb808e0444444421ca7c5e977bd38bc64c96496596590496492596493ca596596593f78f97c186b5f8c8a75e2e8ecf97ff0020776ec1b41f4ec3fd7f0e3a7fb9446e1b323301a40cf7dc57b041f861016b5f3dbff2d7e08ce3a3c11d9f4fd4bcf3abf774d8063fa7e9fa8fbe79773f5f4c659e56c0f30375dce81df4bb39e1eb2cc6055ebb3ebf4cc2f98b49e864257cafdfff00883be6842108d8208822222223f237adeb7a49659c2719259c659c259249c24965964d965924095d2f8f79fbccb2a0a176bdaff2fc1e384167ff00e979d4c27d9ebfd751e2f83bcb17d5f1a3e424223d36037b84127733d9f9f57453527b3c673e19d1af1e3eed979eaea5bf40fd338410748f9d2ef7aec0f84f63f4c8563bafc9791843ecb33e6023d279fd4810ed6696a7f9b1fe3dca8cbfc056378dfd9671decdfa7ab4ba79838020ee088888888bca3cf20e3e9c7d3824cf3967192596592719249659249259659c25831c27c37bf3320fb998b13eb2609a8bf716b86feb2f3fd38dec784d3d27bb54d0315f7f7130f763828beb39a594d5e7b471fd379c35af90f0ff002449f0b83e190756df09c1f0faff00d404c042106ec03e3d0fb8e40d0447447c25913fa8513e6724ebb4ff00c89820dd43ef7f56089e9f475bfd98dbf67625b65ec7f83c5d4710820bc2107511c1111111f98be97a49259ce59659659649659659649ca49671965d45fa94401875d2787f71ba827a183da67c7c4a5d1600cc7a7e6f0c809e95bbfc592c93f51ff610e175e72f259d21347ee3a1c6c0eb0ba2f948bff0a3ff00d96d1f2ebf4841cc023f3f0dae6c5099e46f7bbe9f95e193b300dd253ccba7957b3f97f884a1d6d7815e2f78898433447ff0f4c9319682fbc3fcfe14077041030447078888888fc43cff0010492c938cb24b2cb24b24e138c92cb2492cb2cb23a33f0beb7a9d07bc9e802d1dbed98e5e1e33ca77209be889b1d2fe4bd5f39f3a70fe136dceafbc3ad88ccbba7de3288d2ff65fe20027b3665a1be3f67b9f75a25dd0ff00d0cff0da1f923a5bbba447e9fe6222abbf90d2061df490899837daf3774bfcf84365f190637ff33f0c0087519110704444447a888e4ef7a7e119e33bb2ce32cb2c9b24b2492ce12cb24b3f06230563b7c6af728bf60fbce953bc9331d6f8fd40089d6bfa2bcafeb1029ebaf10f6863f33d9f87abcdd310fa4bdce13f43d7f8928c46751d1057ea6b76239e98aec497df49646d7e73fbb552f5bf3eff00c3abf6613854dce96411e09d24039db772421f11faddff00b93f451fdbdbc7d10410472382221223222381f8afa5e93c64965965965965965964925967193f9319fc8fff0010c139eb0cc6f860ea4c877d9e22d1ad8f83c1fe124b37fa5307f6401cf72ee7acbec0f86cbf7996fa73fdd8133b3f1e27fc433675327ec3fb78ff0036f8c477cbbdf3e3e27c38d6fef47b26f35afe87bb41c200fe43fad89afc406818496fde5db8c1eb7efc4802bbb3d0030cf5d4caafb778081111119c91e208223d4447e07d787ade9784f39ce72924964d965924925924967e3923e4926bebe6f16ee2c2f6198878723c4d759fbf25e8f47fd9fd0ff3151ea45f6328be0b086b80c650dda0a34d5a2debb7f9f1fe640b9db83fcc47ea1afc763fce5d246534127f12118ffd331cf4007e9b243df7046fb2458f799fd4bbfa30d1ded882088e0e02088888888888f31ff01467f24b2ce12cb39c924b39cb2492cb387a6c207d77068f2303744e1f9d83e68907fe923fd865977f099fb178efa000f9eedac6676ffe5d989fdf1d5afa2c0fb58c89f2027ecb307c8ffd8d86abfd0c7f92c76d739e4ba63caff76c6f0ff1f51267aec5de8f9b4be4607db64108208e0f1c911c7b88888790ca72ece5f497899e338cb2ce19e32492cb24924924b2ceac92c9249e9967cdd9e269d07bfd4fa7dddac363e7626ffafe7acea7f0f51c7bdf3e2f1836eb11cf8db0a30e7f435ff3b607ddb0fbcfd1e6df51889fc333077fdf927e9fbb073caff9bb1980ff00d3f89c3a3fa6314f8f1374fc47dfdd99041641d4105904447044444444433fc2aea5e2c92ce338cb38c924b2464b38c92492cb24e5e12c3f781f10d23f18427b9db133134d3e3c8fe376525c68fc9a67d0ec5da79901621db235d3ff007612f23fb3ff0066447b21c6e7d93bddf7d5d0d874ff00f1f7345f7991be76a10120ee7d547dfb4d1ff16ecaf45061dbdf6ffab020820b2cbd44447e244316db112e3e9f827e278ce33f0cb24b2649384b249249e199e19e3a078f29b9e601ac0f19d0ee74edf37643ab9fc23e6fe49fa7bc8f50f3eac561d4d0ff00e75600687fa0ff00423513e9f85dd10147fe667fd5d919985f1974fe5712f124ecfe6d4c7430e02130fc088dc83f2223822383e2b8fa4bf1ce338c92cb24b2492cb26492c99996db786dcc28ef47cc0763ce7788ff0010cef39d4a766dfe07fdc462f1fa153b3fb91b3d3bccef2c76d58c1e530bf62cff003697e43fccbee02347c96499ff00991173e8db5302ff0066ff00dda3bbcf53d2483ddcdf0297842267e06c4447e2470430c4705394f194bc7fc0fe59c249249c249249324edb0f3db4465479a1e97bea1d40c2ccc659d98699fc7ffdbff8a57afe18ef8c676e16818bf01d41913dff00d87a7e37cccb8f4d5f5d978e6d8f85ec7d47ff0083daef39eed8f407cc80d3f531c03b9df080f07f13f7076abaaf95fc016dea5b7be08bbe0e0e06de062218970729f894bc7fc39649659270965925924924924931b89c3747e59fdd92e040627cb9ea7c83a69fb3b2cc1e1dfec80ecedeafa1c97e1983e9b191d1f0ddec4d44813a61a488ee8e2796c1868b43a9881ea7bbe3fdeb7727d1b749f987eb7ab10eaccba22659782222de37f03918621ee1865394e5dcbc4dd596596739659659f864c9772492496492592493696c5e1f63ecbb9dc4c86f8f676234fd78ea308178cf2ffaba9e9ee206914819ee3e79ee2ff1194cc9aed6beaed2c98e7799f5bff72823ae87cf4b2b4ee00f175b385f33c8441078b39dfc088622186194e539cbc7fcaf0c964cc96709324ccccc925d82a1bd9ef5f3f1140333a0cfc9f1f7e25122600ed1ab7fea6eacf8fce100f51d3b1176dfc16a233a70dfd489f0017dc2f6bdfc487a9313c4deeb46f0a0fd067fd58b3c877db121c6cb2cbf8111cedbc9c6f0430c31294e529cbf2cfc32cb38c926c99fc59999b2492162dbb03ebec7b1f700f83a003330c49e1be8e20ec74f1bbb938f5359a666e4511e4db30c933d7a2fa3dc4b3ddda11b8b9bde1226a763b82fa360f31a1bf7d34afc5e829e7e5f2bfcbc1267784b182c8208e77f0de778d86185294e729f73fc33f0cb3f0ce1e1924fc199e1249e1985a3a107d33c0789a09681d2f1faf4c8de20f8dfa3ec3ccc17aa70fb270411373a47f6cc3ef8f6773bea09649092cb38641659f86fe7b6db0db0c30b29cf89f8978b3f138ce52ce19267f04b26666666666421324c685961e66f701de0f987e460f03ddb23b4e8669fddd54693a4dedb99f329a7545053f5803e0e4624f0649659673b6fe5b6f1b0db6c30c329ca73f12f1ce5967e19659670ccccf0cf0924cda94a9e0599924b2492498931e0492492c989659c672703c6dbc6f1b6f1b6c3294e729cb83fe2cb2c924924e18d9249312c90e558964964924924924924924c492492492679f7f88c316f1bc6cb0db6c30f0395e095e2ff00832cb38cb2c6c9263324b26cb2499924c6bf59ac624c4924924924b2492499924b5ea7967f1d9b78db7861b6d86194a52e6b39ce33f0ce32ce5387249924b2cb38318c6318c448496492493119249249c926726596667878ef8dfc378db6db6d86194b81789fe51c965967e0f0c96593c270f0f0924c4921333333249b24c93333799242678667f1db6db6d965b6db61861e272f1c59670707e39165e6cb2cb38cb24924924e19e1999380703332cbc2cccccccccccccccb6f1b6db6cb6db6db6db6db0c30ce64bc5e0ba7f2082cb2cb38ce32cb2cb249249249270e1e5e1380700926596596596599d996659999965b725ea5b65bbbcdb6db6db6dbc065c0fc4bfe000e0fcf2ce32cb278492c924e1999b780870084ccecccb3933c3333333332f2cbf86db6db6db6db297e31a719659f8e59659672964965924924c932493332db3243f001249e199996666659e5e76d96d96d965b65e0b6db1c0f05ddc67a701ce4590596590596592739c649c24933324c93332ccc908424e0cccc9333332ccb2cb6db6db6da5b6cb2db2db6db6c3c1d9f85a724707fc2cd964f092493333333333e386664e03824ccccccccccccccccb6db2db6cb2cb2f07f0021f8970e0e4fc32c938cb2cb38cb278649278666667c4cccd899383c1999999c9999659659997ee65b6db5f9b6596db6de0313781db963ef1c91cfb63fe027c9c3c3e6667c4ccccf8bca6f29e1e1fcc07cf0667d5e53e678333e5fa9999e7e79386ffb4f078781ff005c3d7f77a4fbbfffc4001f1101000203010101010101000000000000010002030411100520061214ffda0008010201010200b1613ce722224e4e789e10f008400e5402102b0842105889ce713c7cec7c6703f1cf003c002108421084232d1fc71389c889139cf09dff004c20000108784210842025844e78ce339c8f8af9d5879d25610843c20100084aca8c444e711f7918f8fe17bd254acac21084210f0842054a558c7f0c7c63118f88c56d6bb62fdaa4ac0000000f084256631189ce27138c4444e7fc56196b61f99a78f7299352d5ada8d5210840002102a50c5546339e2222718c66b6b61fe6f67118f2e85f3e0dbc39edad8b4be97ccc6d25600540210840a98eb8ab63f1c8c63e3127f31ad83ebfd6fe4f0fc6dcf8c66d9d1c9874b52a6de3d8c18e1e12b08421084acc7308889ce722312318cf99b1ff006ff45fd0fc3fec7637b25336bd9c3b393571e7fa9ab85ac2108421e0050c5308ce279c448c631969f2f734be96c435b466b7d0b53e8e92fcedbfa5afa5972e212108421084aca18a60138d513888888cb4b4d2d4c2e5a6efd7c39af5f9db9926e6be63e765c47d20842108421e565262982278888c62223189f1b5331872ec1a39f6b15294cd7d6d7bfc4dafbd4d8ca35484ac210f2b2b314c119ce738888c446319f17ecfd2c7f0b28ed5325be765be2c0fd6c16c9f6da0150958421084aca4c5307e51388c462226be6d9aebe4dfc7b58fe75f35b6e64d8fe9edb99f6372b084210f0879569314c119ce4463388888897aeadb7cbecee4fe7b37d3afc8d9b4fa5b193e6ebd2a001084210f09498a60fcf224462231969af9f732b9299eb9fe84fe7728fd1d4294c615842108421084a389c0feb8888896aa4c94d86d93e7e7deb62dbf96d6da9f52f60842108421084255c4e179ce73918c44444b162d5dcc1831b5d99f3b16b4a65a548242108243c210959470d99ce4e73888f8c6584e52ce071e6f99974b1e1bdf81c00f084210f0959470d93ce4e711f1112cab6eb398ef6b64d8e70f09cf0843c2109569313e739ce356ad7fcff96ad6d571b4ff003fe7fcf39ce7a4ec210f0804212b3124084e071189c46ad5a346a9cff29cf487a42108784212b28c3c0f39c44e227896ad84fcf47a7841e9087a2344843f5c44e3e318b62d54f790f39084210f084212b08784e739ce44446318c563ef3d3d021087a42565610f0840e1eb1962d18c63e31f3a3d20f87a23084acaca1fffc4003911000103020305060404060301000000000100020311210412311020304151051322617191324281a14072b1d106145282c1e15062a2f1ffda0008010201033f00d97da3837d8288596886d3d515608db68de3c6086cf24514772db9a6dbee8da11478810b70fc905742dbb5dfb7075d83786c0821b2fb0a36468a94d970aeadc03b6df801b6837bcd79a1b2dc03f813b9441502f25d023d11a6c2adf83b7006e628e14e20444c40d0bc680f43b98ec400437230e99b52b09838867c0b2693fadcf701ecda7ea862640eee6188814a46d201f7253d9cec9ec17165643efc0bab70ced3bd88c4cf1c30c6e7bde68d680b0b84fe1f930b280e7c83348e03e6e54f4e49f0cb246ef89ae20fd14b266c8c2ea0bd2f4588c3889cf01d2ba8e6455ad075753f45db02f2caff0046f840fa0589752ae0efcdfb85048e0d70eedc4d2a4f84fd55428e4190b5a6b6bf24fc1cae00d5b5a7983b0ee5b7efb471b01d99d94dc63dedefe665413c81d1a3fca66298e0e15ab6c7f7580ed07bb12657c4ea0a86d2fcbdd4b196b2080471d340c0f713e64d6fe6b1980cf887c04b5c6ef241353d546f0416fb5d61e4bb5b91dd40a57d548c395fa7270d14c30cd735e1ede808b22d71cc2fcc68b0f3c001bf8686b7aa7413969ad3507c9590e1dd69c7c2e23f87a18a470061750bc9a65b93477950d960708191c730909d03287dcaed38dcd830ef7332b419295a8cda0f5a5cac641208b18fef219050be803987a82351d51970d98624ba3a59cdcaea8e87302b0f2484b1b92b6b2c4e1cd6ee62648d36f50bb8999e1cacca1aea1d48e67fca8b15872f64803c0b03cfcbfda0d7007adc7429b3419983c4cbaa81c11bb7dd1ba371bd9b86931423324b202c8d95a3728d5cef25349da4c99f144d6922ac6372b47a04f966c4c94f139efaf4d51f1348ad0a91b135e2b9db71cc387d7985849c86c91b63713f13452fe8b282d37691f42149877f7d19263f98744d919ea13a39042e76bf013fa2750cc07e6fdd091b94fa15dd62656529471a6e5f7c6cd10e3611bd87248f24ca5be0b59a35f7283329e8531b91f4f0cb18753cc588fb2863616c1858da294248a93e77586c5f64873236b258a40d753e60e07f421112822d529c698794dfe477f854a82011a10742bf92c4369530c9761e9d5bf4448ab4e84107a10a1c6767343c54bb335c3a1013f0d8d9223ab4dbe9a20717987ccd077adbfa6c3c5c1cfd81287e5ab59e75141cd01348d1c8d42efbb103abe2c34a2bf964b7ea13b29a744e8b16c69759ce00f4596423aaefe0a8b3dba11c88466c3b5e7e21e178f3086320970df39f1447a3dba7be88b99422845885dc634c44d9f71ea108fb4e0905848dbfa85de480f414e268b4e3ba0c2966b5d53a3c5178d2a7d8a6ba4970ce3e19e2733eba8599a0117163ea165a380d0d42ef60c3ca3e767dc20cc5d3e570d3cd3a0c4b9a7e191b51ea1118c8686e5e07ba386edb9c0146cb495bfddafdd08f110bff00a5e3ef65dfe1db4ad63cc4575d69aaa017d07174dcb70fbb945f54c9a3151ad949879e3768e8dc3dc26b3b41c59f0cad1237fbbfda21cd05c0663624d05535f819220e0e313ea0a30cad7747041f838a51f21153e4564941adda5074181c48e9427c8a696035d53e531b731d3c57d97db7e0e88f0edb7ec9af8295d134cad23570a1f50bbcc36189f8a2b1fcae34fb11f74248294af309d1e2e58dc6cf695970ed77414f64311d8f949a90d20fd107be4af926c9d9b8785d4a35a47b12a56c7de999ae89841a037ada83ee9d4a9d4f1b4dcf2e0df6593a2716f5d10cad279387decb2c7ae8ea1f477fba15de402ba809b87c744f26801083f00f3d1e3ff5ff00c458dc5455d1d5f708ff003338e555349878bbb198e52683d54ddc88de287355c3f440016e2dd69ba55b61dd28ecb83cc26e5cce04b6f5e55f441d86711cda3ec9cd1e2e6a2ef1ae919565c1cb622bcc7a264bd9995a6b99ec153cf28375931f38eac07d8a06594f57958b883c31e0036bb41fd422f7549249e6adc5bee0438415d55623f977b80ab1ba917cb5d2bd027e46b2a482d049f22116b6ad171cbaa3361ce52d343423300e1f4d51898e8dcf6bb2d08ca6a2faa0dc639dff0052134e6a1bb8b88f741a2886d15d96e0e8b4dc3ba37c26528f0e22e0e5765241d456f63d144d2ec8c0d04e839795f64efc534c2c27bcb10391eaa4c0e4abf33be7a72afecab878f119b57b9997d286bf751e46b5b0b2302bf0837adef527f03a6c3b87814410db54f8dc0b5c5a46841a2739c493524d4d6f5f5523e264643031b52d0d635baeba0086d3b0eedbf0e78037edc31c3086d1b46f1d87857dc3f8028ecd7707fc19debef8e00a6e043896e09fc2595789657dbaedb70ebb2ebfffc40020110001050101010101010100000000000001000203101120043012051314ffda000801030101020006b7e03e1846611967a3468808583a85e7e4373e47836783468a002cccce35043e46f49da26cd1a24503c0e87595841a3c14783451a06f49ec7402c45673a7834539143ea168b0333330d1ad277b727142f791c891040053089b841041a28deed1a717140eefc9efff00b184ba091a1cc7c65192390828a37bc144924f63bf5093c70fb669bc7ecfc3660e7ccf6b087391e0f4e4e4e3c03bc8ac735eefe778bfa1fcc8a18dcd763d8d99f1c6e7a28d9e0d14e4e23a0b6c5007cf27f37ce8bdc9f00314abd11f964f4334a28d1e0a28a727d6ef208a1417e98496798878958131cd53b6431a28a23928d393f81d0281082f5cf19f536173c40e712d2e2bd71f8df851468f269c9fded82826a92185dec6461aa15ec646e2bce4b6171289a3c945393d0ec58a0826a6bb1a635287880fe7c8981d1ba8f6514539390bd439081a639cbc67d11c2ef536174ad7a89adf4cae34783c94e4ff0090a1413535be632b588a88fac390f419dced47e25383be00d028105467097800c7302a7f3b5b64f469c9c9cb7bdd416820b5cc73de1e2695f207a24d944d1e0d3914e1b7bbd0ad057fa873fd9e4f548f6b768927b34514ead089ddddb141600105ae039d3d1e4a29ddeefebf5a16e83fa076b6b77793c1b29c169f883ab4115bbbab37a3c9a72751f98b140fd8f451e756f22c585ab16f67b28def5b410a160d6efc0f451468fc850a1f63468f0514e3ffc40032110001030203060308020300000000000001000211032112315104104041617122309113202342506081a132b16282f1ffda0008010301033f00e0cef08208712770438b3ee043ec9b79e7cb3f60dfdd2998c366fa6e3ba9373b9d154a87c35303740d13ea5369b624bafcee9872b7d018c61738c019929f536b6bdb602c07441cd0464531a3c44042a3cc5983376a740b67c8007f69939428048ba85083c056e36b6d15fd9869c0d37469b861d6e156a50cc208d4f24e2713e4fe6153a81b4c9823209c0c829ed371641c2de89a1f0411d548909c0a0e683e6e7c03d9b4b9c1d670b8d7b2a8ec4632d552a8df6b54589868ca639aa7529934843c729b144558c026723223d1546b407194c788e68b4e6b1b4eaaa52aa1ae12c26fd3aab48585f0723c69ae709385a333ce740a937677061339c93328318c61c80084e69ae2445939b76b891a1473e683861767cbaa20a0e18a3ba07e19ff00545a09d2ea5a0f157dd57db5368030812eeb2a411d145620f23fa44ba5d51c6fd827d3af992d227b2b4af987e54ac6d20e633439a7d2ae4b4c61823d536a526bc64e0bc11a1215f8bab4f6da41a0c388ecb25876998b39bfb1ff00534b6f9a963bb2c54e34b2c0f83928774e4b010fd33ecaf658e94e9fd2c5b339bcda7fb504f7e329d4c24e639a1004a9a61c3e520fe141dd86a3dbd54b411c907d3ec5781d3a2c541bab6c7f0a58e1a84ca2e25df340449e325a4688b5d641f4fa3828107316f440b247245b59aee4507308d42c358b75598585f51a8ca681976e0079b75e295e073743650f2473560b1539d1620b05795064221e5da944b8b0d2703ada235524f1b7408586af710b1045a4a9691a8585c42f102be1b0ff008854a9818dc00c95274963819b4853e65f82129cd2d2ae10c52138b60668b5f7d0a9685e06760a95423134184d6340000032038f884d317cd453055ee9ad78690eef84c7aac44588534d616f6853f41707483eb709ee893303753a549c5ee8010da1b3100ff1fc280e6c7205381712f73a6333a70438306c402a222d1a2b932493a9278b3c75fcd3e49fa59fa28dc77dbec4b7036f7edbff00ffd9),
 ('SANDIAPAIS', '1.12', 'S', '0.99', NULL, NULL, NULL, '500', NULL),
 ('TOMATEPAIS', '1.75', 'S', '1.49', NULL, NULL, NULL, '500', NULL),
-('UVAVPAIS', '2.85', 'S', '2.37', NULL, NULL, NULL, '500', NULL);
+('UVAVPAIS', '2.85', 'S', '2.37', NULL, NULL, NULL, '500', NULL),
+('VANSA', '37.95', 'S', '35.30', NULL, NULL, NULL, '0', NULL),
+('VANSAUNI', '45.00', 'S', '38.58', NULL, NULL, NULL, '0', NULL);
 
 -- --------------------------------------------------------
 
@@ -439,20 +902,23 @@ INSERT INTO `tm_tipo_producto` (`id_tipo_producto`, `dto`, `imagen`) VALUES
 -- --------------------------------------------------------
 
 --
--- Estructura Stand-in para la vista `v_desc_tip_producto`
--- (Véase abajo para la vista actual)
+-- Estructura de tabla para la tabla `tm_users`
 --
-CREATE TABLE `v_desc_tip_producto` (
-);
 
--- --------------------------------------------------------
+CREATE TABLE `tm_users` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `username` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `email` varchar(100) COLLATE utf8_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
--- Estructura para la vista `v_desc_tip_producto`
+-- Volcado de datos para la tabla `tm_users`
 --
-DROP TABLE IF EXISTS `v_desc_tip_producto`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_desc_tip_producto`  AS  select `tid`.`id_tipo_producto` AS `id_tipo_producto`,`tid`.`descripcion` AS `descripcion`,`ti`.`FOTO` AS `FOTO`,`tid`.`comentario` AS `comenterio`,`tid`.`footer` AS `footer` from (`ti_desc_tip_producto` `tid` join `tm_tipo_producto` `ti`) where `tid`.`id_tipo_producto` = `ti`.`id_tipo_producto` ;
+INSERT INTO `tm_users` (`id`, `username`, `password`, `email`) VALUES
+(3, 'user', '$2y$10$CuTX.C60xqmgSugLQTKerOzhG2GdBbxtXBj4TerWI1FLnettFt3fC', 'pass@gmail.com'),
+(5, 'user1', '$2y$10$jj1UGgZt2N7VLWdVmThSaubIBHDJZTBidTRcVLR9uKYBwMhN9L5ue', 'pass1@gmail.com');
 
 --
 -- Índices para tablas volcadas
@@ -565,15 +1031,21 @@ ALTER TABLE `tm_modo_pago`
   ADD PRIMARY KEY (`id_pago`);
 
 --
+-- Indices de la tabla `tm_paises`
+--
+ALTER TABLE `tm_paises`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `tm_pedido`
 --
 ALTER TABLE `tm_pedido`
   ADD PRIMARY KEY (`id_pedido`),
   ADD KEY `id_cliente` (`id_cliente`),
   ADD KEY `id_estado` (`id_estado`),
-  ADD KEY `id_fact_env` (`id_fact_env`),
   ADD KEY `id_envio` (`id_envio`),
-  ADD KEY `id_pago` (`id_pago`);
+  ADD KEY `id_pago` (`id_pago`),
+  ADD KEY `tm_id_factura_fk` (`id_fact_env`);
 
 --
 -- Indices de la tabla `tm_producto`
@@ -593,6 +1065,41 @@ ALTER TABLE `tm_tipo_cliente`
 --
 ALTER TABLE `tm_tipo_producto`
   ADD PRIMARY KEY (`id_tipo_producto`);
+
+--
+-- Indices de la tabla `tm_users`
+--
+ALTER TABLE `tm_users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `tm_factura_envio`
+--
+ALTER TABLE `tm_factura_envio`
+  MODIFY `id_fact_env` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+
+--
+-- AUTO_INCREMENT de la tabla `tm_paises`
+--
+ALTER TABLE `tm_paises`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=241;
+
+--
+-- AUTO_INCREMENT de la tabla `tm_pedido`
+--
+ALTER TABLE `tm_pedido`
+  MODIFY `id_pedido` bigint(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=150;
+
+--
+-- AUTO_INCREMENT de la tabla `tm_users`
+--
+ALTER TABLE `tm_users`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Restricciones para tablas volcadas
@@ -683,26 +1190,17 @@ ALTER TABLE `tm_desc_producto`
 -- Filtros para la tabla `tm_linea_pedido`
 --
 ALTER TABLE `tm_linea_pedido`
-  ADD CONSTRAINT `tm_linea_pedido_ibfk_1` FOREIGN KEY (`id_pedido`) REFERENCES `tm_pedido` (`id_pedido`),
-  ADD CONSTRAINT `tm_linea_pedido_ibfk_2` FOREIGN KEY (`id_pedido`) REFERENCES `tm_pedido` (`id_pedido`),
-  ADD CONSTRAINT `tm_linea_pedido_tm_pedido_fk` FOREIGN KEY (`id_pedido`) REFERENCES `tm_pedido` (`id_pedido`);
+  ADD CONSTRAINT `tm_linea_pedido_ibfk_1` FOREIGN KEY (`id_pedido`) REFERENCES `tm_pedido` (`id_pedido`);
 
 --
 -- Filtros para la tabla `tm_pedido`
 --
 ALTER TABLE `tm_pedido`
+  ADD CONSTRAINT `tm_id_factura_fk` FOREIGN KEY (`id_fact_env`) REFERENCES `tm_factura_envio` (`id_fact_env`),
   ADD CONSTRAINT `tm_pedido_ibfk_1` FOREIGN KEY (`id_envio`) REFERENCES `tm_modo_envio` (`id_envio`),
   ADD CONSTRAINT `tm_pedido_ibfk_2` FOREIGN KEY (`id_pago`) REFERENCES `tm_modo_pago` (`id_pago`),
   ADD CONSTRAINT `tm_pedido_ibfk_3` FOREIGN KEY (`id_cliente`) REFERENCES `tm_cliente` (`id_cliente`),
-  ADD CONSTRAINT `tm_pedido_ibfk_4` FOREIGN KEY (`id_estado`) REFERENCES `tm_estado_pedido` (`id_estado`),
-  ADD CONSTRAINT `tm_pedido_ibfk_5` FOREIGN KEY (`id_fact_env`) REFERENCES `tm_factura_envio` (`id_fact_env`),
-  ADD CONSTRAINT `tm_pedido_ibfk_6` FOREIGN KEY (`id_envio`) REFERENCES `tm_modo_envio` (`id_envio`),
-  ADD CONSTRAINT `tm_pedido_ibfk_7` FOREIGN KEY (`id_pago`) REFERENCES `tm_modo_pago` (`id_pago`),
-  ADD CONSTRAINT `tm_pedido_tm_cliente_fk` FOREIGN KEY (`id_cliente`) REFERENCES `tm_cliente` (`id_cliente`),
-  ADD CONSTRAINT `tm_pedido_tm_estado_pedido_fk` FOREIGN KEY (`id_estado`) REFERENCES `tm_estado_pedido` (`id_estado`),
-  ADD CONSTRAINT `tm_pedido_tm_factura_envio_fk` FOREIGN KEY (`id_fact_env`) REFERENCES `tm_factura_envio` (`id_fact_env`),
-  ADD CONSTRAINT `tm_pedido_tm_modo_envio_fk` FOREIGN KEY (`id_envio`) REFERENCES `tm_modo_envio` (`id_envio`),
-  ADD CONSTRAINT `tm_pedido_tm_modo_pago_fk` FOREIGN KEY (`id_pago`) REFERENCES `tm_modo_pago` (`id_pago`);
+  ADD CONSTRAINT `tm_pedido_ibfk_4` FOREIGN KEY (`id_estado`) REFERENCES `tm_estado_pedido` (`id_estado`);
 
 --
 -- Filtros para la tabla `tm_tipo_cliente`
@@ -721,60 +1219,16 @@ COMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
 
-
-
-
-
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `changeOrderStatus`(IN `idOrder` INT, IN `idstatus` VARCHAR(2))
+    NO SQL
+UPDATE `tm_pedido` SET `hora_entrega` = NULL, `id_estado` = idstatus WHERE `tm_pedido`.`id_pedido` = idOrder$$
+DELIMITER ;
 
 DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `getCategories`(IN `idioma` VARCHAR(2))
     NO SQL
 select `tid`.`id_tipo_producto` AS `id_tipo_producto`,`tid`.`descripcion` AS `descripcion`,`ti`.`imagen` AS `imagen`, comentario, footer  from `webkart`.`ti_desc_tip_producto` `tid` join `webkart`.`tm_tipo_producto` `ti` where `tid`.`id_tipo_producto` = `ti`.`id_tipo_producto` and `tid`.`id_idioma` = idioma$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `getClient`(IN `idCliente` VARCHAR(10))
-    NO SQL
-SELECT c.id_cliente,  cr.email , cr.telefono, cr.direccion  FROM tm_cliente_registrado  cr
-right join
-tm_cliente c
-on  cr.id_cliente=c.id_cliente
-where c.id_cliente=idcliente$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `getProduct`(IN `idioma` VARCHAR(2), IN `id_producto` VARCHAR(10))
-    NO SQL
-select TD.id_producto,TD.descripcion_corta,
-td.descripcion_larga
-,TD.id_idioma,TP.precio_actual,tp.precio_oferta, TP.imagen from ti_desc_producto td, tm_producto tp where tp.id_producto
-=td.id_producto and td.id_idioma=idioma
-and td.id_producto=id_producto$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `getProducts`(IN `idioma` VARCHAR(2))
-    NO SQL
-select TD.id_producto,TD.descripcion_corta,
-SUBSTRING(TD.descripcion_larga, 1, 100) descripcion_larga
-,TD.id_idioma,TP.precio_actual,tp.precio_oferta, TP.imagen from ti_desc_producto td, tm_producto tp where tp.id_producto
-=td.id_producto and td.id_idioma=idioma$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `getProductByCategory`(IN `categoria` VARCHAR(10), IN `idioma` VARCHAR(2))
-    NO SQL
-SELECT  t.id_producto, p.precio_actual, p.precio_oferta, t.descripcion_corta, SUBSTRING(T.descripcion_larga, 1, 100) descripcion_larga, p.imagen FROM tm_producto p, `ti_desc_producto` t, `tm_desc_producto` td WHERE 
-td.id_producto= t.id_producto
-and p.id_producto=t.id_producto
-and td.id_tipo_producto=categoria
-and t.id_idioma=idioma$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `changeOrderStatus`(IN `idOrder` INT, IN `idstatus` VARCHAR(2))
-    NO SQL
-UPDATE `tm_pedido` SET `hora_entrega` = NULL, `id_estado` = idstatus WHERE `tm_pedido`.`id_pedido` = idOrder$$
 DELIMITER ;
 
 DELIMITER $$
@@ -789,18 +1243,6 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `getCategories`(IN `idioma` VARCHAR(2))
-    NO SQL
-select `tid`.`id_tipo_producto` AS `id_tipo_producto`,`tid`.`descripcion` AS `descripcion`,`ti`.`imagen` AS `imagen`, comentario, footer  from `webkart`.`ti_desc_tip_producto` `tid` join `webkart`.`tm_tipo_producto` `ti` where `tid`.`id_tipo_producto` = `ti`.`id_tipo_producto` and `tid`.`id_idioma` = idioma$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `createUser`(IN `username` VARCHAR(25), IN `userpassword` VARCHAR(255), IN `email` VARCHAR(100))
-    NO SQL
-INSERT INTO `tm_users` (`id`, `username`, `password`, `email`) VALUES (NULL, username, userpassword, email)$$
-DELIMITER ;
-
-DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `getClient`(IN `idCliente` VARCHAR(10))
     NO SQL
 SELECT c.id_cliente,cr.nombre, cr.email , cr.telefono, cr.direccion  FROM tm_cliente_registrado  cr
@@ -808,6 +1250,12 @@ right join
 tm_cliente c
 on  cr.id_cliente=c.id_cliente
 where c.id_cliente=idcliente$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `createUser`(IN `username` VARCHAR(25), IN `userpassword` VARCHAR(255), IN `email` VARCHAR(100))
+    NO SQL
+INSERT INTO `tm_users` (`id`, `username`, `password`, `email`) VALUES (NULL, username, userpassword, email)$$
 DELIMITER ;
 
 DELIMITER $$
@@ -920,5 +1368,3 @@ INSERT INTO `tm_linea_pedido` (`id_linea`, `id_pedido`, `id_producto`, 	`unidade
 
 end$$
 DELIMITER ;
-
-
