@@ -1,17 +1,18 @@
 <?php
 session_start();
-if(!isset($_SESSION['user_id'])){
-  header('Location: login.php');
-  exit;
+if (!isset($_SESSION['user_id']))
+{
+    header('Location: login.php');
+    exit;
 }
 
- require_once ("includes/conexion.php");
+require_once ("includes/conexion.php");
 
-  $sql = 'CALL getOrderDetail('.$id.');';
-  
-  $conexion->next_result();
-  
-  $query = $conexion->query($sql);
+$sql = 'CALL getOrderDetail(' . $id . ');';
+
+$conexion->next_result();
+
+$query = $conexion->query($sql);
 ?>
 <div class="container">
 <table class="table table-striped ">
@@ -32,24 +33,23 @@ if(!isset($_SESSION['user_id'])){
   <tbody>
 
 <?php
+$cont = 0;
+$row = mysqli_fetch_array($query);
 
-$cont=0;
-   $row=mysqli_fetch_array($query);
-   
-    echo '<tr>';
-    echo '<th scope="row">'.++$cont.'</th>';    
-    echo '<td>'.$row['nif'].'</td>';
-    echo '<td>'.$row['email'].'</td>';
-    echo '<td>'.$row['nombreenv'].'</td>';
-    echo '<td>'.$row['apellidoenv'].'</td>';
-    echo '<td>'.$row['direccionenv'].'</td>';
-    echo '<td>'.$row['codigo_postalenv'].'</td>';
-    echo '<td>'.$row['poblacionenv'].'</td>';
-    echo '<td>'.$row['pais'].'</td>';
-    
-    echo '</tr>';      
+echo '<tr>';
+echo '<th scope="row">' . ++$cont . '</th>';
+echo '<td>' . $row['nif'] . '</td>';
+echo '<td>' . $row['email'] . '</td>';
+echo '<td>' . $row['nombreenv'] . '</td>';
+echo '<td>' . $row['apellidoenv'] . '</td>';
+echo '<td>' . $row['direccionenv'] . '</td>';
+echo '<td>' . $row['codigo_postalenv'] . '</td>';
+echo '<td>' . $row['poblacionenv'] . '</td>';
+echo '<td>' . $row['pais'] . '</td>';
 
- ?>
+echo '</tr>';
+
+?>
   </tbody>
 
   <tfoot>
@@ -73,6 +73,4 @@ $cont=0;
             
 
 
-</div> 
-
- 
+</div>

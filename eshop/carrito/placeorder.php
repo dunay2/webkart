@@ -3,7 +3,7 @@
 require_once('clients/insertardatosenvio.php');
 
 // insert order details into database
-        //$_SESSION['sessCustomerID'] =2;
+        
         $customer = $_SESSION['sessCustomerID'];
         $client_ip = $_SERVER['REMOTE_ADDR'];
         // get customer details by session customer ID
