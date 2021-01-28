@@ -1,2 +1,2 @@
 # webkart
-php kart
+HTML Web, PHP kart, some jquery, bootstrap & mysql
